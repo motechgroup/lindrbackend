@@ -6,11 +6,13 @@ use App\Models\DeploymentRecord;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class DeploymentService
 {
     public const ALLOWED_ACTIONS = [
-        'deploy_latest' => 'Deploy latest code, run migrations, and rebuild cache',
+        'deploy_latest' => 'Pull latest GitHub code (motechgroup/lindrbackend), run migrations, and rebuild cache',
+        'git_pull' => 'Pull latest commits directly from https://github.com/motechgroup/lindrbackend.git',
         'run_migrations' => 'Run pending database migrations safely',
         'clear_cache' => 'Clear and rebuild application config, route, and view caches',
         'restart_workers' => 'Safely restart background queue workers',
@@ -46,7 +48,7 @@ class DeploymentService
         $record = DeploymentRecord::create([
             'initiated_by_user_id' => $initiator?->id,
             'action' => $normalizedAction,
-            'branch_version' => env('APP_VERSION', 'main'),
+            'branch_version' => env('GIT_BRANCH', 'main'),
             'status' => 'running',
             'ip_address' => $ipAddress,
             'started_at' => now(),
@@ -55,6 +57,7 @@ class DeploymentService
         try {
             $output = match ($normalizedAction) {
                 'deploy_latest' => $this->runDeployLatest(),
+                'git_pull' => $this->runGitPull(),
                 'run_migrations' => $this->runMigrations(),
                 'clear_cache' => $this->runClearCache(),
                 'restart_workers' => $this->runRestartWorkers(),
@@ -88,32 +91,71 @@ class DeploymentService
     {
         $outputs = [];
 
-        // 1. Run migrations safely
-        Artisan::call('migrate', ['--force' => true]);
-        $outputs[] = Artisan::output();
+        // 1. Pull code from GitHub repository
+        $gitOutput = $this->runGitPull();
+        if (! empty($gitOutput)) {
+            $outputs[] = $gitOutput;
+        }
 
-        // 2. Rebuild caches
+        // 2. Run migrations safely
+        Schema::disableForeignKeyConstraints();
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            $outputs[] = "=== Database Migrations ===\n" . Artisan::output();
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
+
+        // 3. Rebuild caches
         Artisan::call('config:cache');
-        $outputs[] = Artisan::output();
-
         Artisan::call('route:cache');
-        $outputs[] = Artisan::output();
-
         Artisan::call('view:cache');
-        $outputs[] = Artisan::output();
+        $outputs[] = "=== Configuration Caches ===\n" . Artisan::output();
 
-        // 3. Restart Queue Workers
+        // 4. Restart Queue Workers
         Artisan::call('queue:restart');
-        $outputs[] = Artisan::output();
+        $outputs[] = "=== Queue Workers ===\n" . Artisan::output();
 
-        return implode("\n", array_filter($outputs));
+        return implode("\n\n", array_filter($outputs));
+    }
+
+    protected function runGitPull(): string
+    {
+        $repoUrl = env('GIT_REPO_URL', 'https://github.com/motechgroup/lindrbackend.git');
+        $branch = env('GIT_BRANCH', 'main');
+        $appPath = base_path();
+
+        if (! function_exists('exec')) {
+            return "Git Notice: exec() function is disabled in server PHP settings.";
+        }
+
+        $commands = [
+            "cd {$appPath} && git remote set-url origin {$repoUrl} 2>&1",
+            "cd {$appPath} && git fetch origin {$branch} 2>&1",
+            "cd {$appPath} && git pull origin {$branch} 2>&1",
+        ];
+
+        $log = [];
+        foreach ($commands as $cmd) {
+            $output = [];
+            @exec($cmd, $output);
+            if (! empty($output)) {
+                $log[] = implode("\n", $output);
+            }
+        }
+
+        return "=== Git Pull ({$repoUrl} @ {$branch}) ===\n" . (implode("\n", $log) ?: 'Git pull completed.');
     }
 
     protected function runMigrations(): string
     {
-        Artisan::call('migrate', ['--force' => true]);
-
-        return Artisan::output() ?: 'Migrations executed successfully.';
+        Schema::disableForeignKeyConstraints();
+        try {
+            Artisan::call('migrate', ['--force' => true]);
+            return Artisan::output() ?: 'Migrations executed successfully.';
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
     }
 
     protected function runClearCache(): string

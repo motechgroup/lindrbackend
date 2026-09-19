@@ -47,6 +47,7 @@ class DeploymentRecordResource extends Resource
                 SelectFilter::make('action')
                     ->options([
                         'deploy_latest' => 'Deploy Latest',
+                        'git_pull' => 'Git Pull',
                         'run_migrations' => 'Run Migrations',
                         'clear_cache' => 'Clear Cache',
                         'restart_workers' => 'Restart Workers',
@@ -60,7 +61,7 @@ class DeploymentRecordResource extends Resource
                     ->color('primary')
                     ->requiresConfirmation()
                     ->modalHeading('Deploy Latest Production Code')
-                    ->modalDescription('This will run pending migrations, rebuild application caches, and restart background queue workers safely.')
+                    ->modalDescription('This will pull the latest code from https://github.com/motechgroup/lindrbackend.git (branch main), run pending database migrations, rebuild application caches, and restart background workers safely.')
                     ->action(function () {
                         /** @var DeploymentService $service */
                         $service = app(DeploymentService::class);
@@ -75,6 +76,30 @@ class DeploymentRecordResource extends Resource
                             Notification::make()
                                 ->danger()
                                 ->title('Deployment Failed')
+                                ->body($e->getMessage())
+                                ->send();
+                        }
+                    }),
+                Action::make('git_pull')
+                    ->label('Git Pull Repository')
+                    ->color('secondary')
+                    ->requiresConfirmation()
+                    ->modalHeading('Pull Code from GitHub')
+                    ->modalDescription('Pulls the latest commits from https://github.com/motechgroup/lindrbackend.git without clearing cache or running migrations.')
+                    ->action(function () {
+                        /** @var DeploymentService $service */
+                        $service = app(DeploymentService::class);
+                        try {
+                            $record = $service->executeAction('git_pull', auth()->user());
+                            Notification::make()
+                                ->success()
+                                ->title('Git Pull Completed')
+                                ->body($record->output_summary)
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Git Pull Failed')
                                 ->body($e->getMessage())
                                 ->send();
                         }
@@ -95,7 +120,7 @@ class DeploymentRecordResource extends Resource
                     }),
                 Action::make('clear_cache')
                     ->label('Rebuild Cache')
-                    ->color('secondary')
+                    ->color('gray')
                     ->action(function () {
                         /** @var DeploymentService $service */
                         $service = app(DeploymentService::class);

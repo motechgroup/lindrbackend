@@ -6,23 +6,24 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- SEO Primary Meta Tags -->
-    <title>{{ $settings['site_title'] ?? 'Lindr — Dating & Social Connection Platform' }}</title>
-    <meta name="description" content="{{ $settings['meta_description'] ?? 'Lindr is a modern social dating platform featuring realtime matching, coin-powered messaging, virtual gifts, and instant creator withdrawals.' }}">
-    <meta name="keywords" content="dating app, social chat, instant matching, virtual gifts, m-pesa dating, kenya dating, lindr app">
+    <title>{{ $settings['site_title'] ?? 'Lindr — Meet. Connect. Go Live.' }}</title>
+    <meta name="description" content="{{ $settings['meta_description'] ?? 'Discover people, connect through Match and Discover, chat, send gifts and enjoy live video conversations on Lindr.' }}">
+    <meta name="keywords" content="{{ $settings['meta_keywords'] ?? 'social discovery, live video calls, match, discover people, virtual gifts, lindr app, tokens, creator earnings, m-pesa' }}">
     <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://lindrapp.top">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="{{ config('app.url') }}">
-    <meta property="og:title" content="{{ $settings['site_title'] ?? 'Lindr — Dating & Social Connection Platform' }}">
-    <meta property="og:description" content="{{ $settings['meta_description'] ?? 'Lindr is a modern social dating platform featuring realtime matching, coin-powered messaging, virtual gifts, and instant creator withdrawals.' }}">
+    <meta property="og:url" content="https://lindrapp.top">
+    <meta property="og:title" content="{{ $settings['site_title'] ?? 'Lindr — Meet. Connect. Go Live.' }}">
+    <meta property="og:description" content="{{ $settings['meta_description'] ?? 'Discover people, connect through Match and Discover, chat, send gifts and enjoy live video conversations on Lindr.' }}">
     <meta property="og:image" content="{{ $media['hero_lifestyle'] ?? asset('storage/landing/hero_lifestyle.png') }}">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="{{ config('app.url') }}">
-    <meta name="twitter:title" content="{{ $settings['site_title'] ?? 'Lindr — Dating & Social Connection Platform' }}">
-    <meta name="twitter:description" content="{{ $settings['meta_description'] ?? 'Lindr is a modern social dating platform featuring realtime matching, coin-powered messaging, virtual gifts, and instant creator withdrawals.' }}">
+    <meta name="twitter:url" content="https://lindrapp.top">
+    <meta name="twitter:title" content="{{ $settings['site_title'] ?? 'Lindr — Meet. Connect. Go Live.' }}">
+    <meta name="twitter:description" content="{{ $settings['meta_description'] ?? 'Discover people, connect through Match and Discover, chat, send gifts and enjoy live video conversations on Lindr.' }}">
     <meta name="twitter:image" content="{{ $media['hero_lifestyle'] ?? asset('storage/landing/hero_lifestyle.png') }}">
 
     <!-- Fonts & Icons -->
@@ -42,11 +43,11 @@
         "price": "0",
         "priceCurrency": "USD"
       },
-      "description": "Dating and social connection platform with realtime chat, virtual gifts, and multi-gateway digital payments.",
+      "description": "Social discovery and live video connection platform with Match, Discover, chat, digital gifts, and creator withdrawals.",
       "publisher": {
         "@@type": "Organization",
         "name": "Lindr Inc.",
-        "url": "{{ config('app.url') }}"
+        "url": "https://lindrapp.top"
       }
     }
     </script>
@@ -81,11 +82,13 @@
             </a>
 
             <!-- Navigation Links -->
-            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-                <a href="#features" class="hover:text-rose-400 transition-colors">Features</a>
-                <a href="#how-it-works" class="hover:text-rose-400 transition-colors">How It Works</a>
-                <a href="#coins" class="hover:text-rose-400 transition-colors">Coins & Pricing</a>
-                <a href="#earnings" class="hover:text-rose-400 transition-colors">Earnings</a>
+            <nav class="hidden md:flex items-center gap-6 lg:gap-8 text-sm font-medium text-slate-300">
+                <a href="#match" class="hover:text-rose-400 transition-colors">Match</a>
+                <a href="#discover" class="hover:text-rose-400 transition-colors">Discover</a>
+                <a href="#live-video" class="hover:text-rose-400 transition-colors">Live Video</a>
+                <a href="#tokens" class="hover:text-rose-400 transition-colors">Tokens</a>
+                <a href="#creators" class="hover:text-rose-400 transition-colors">Creators</a>
+                <a href="#spotlight" class="hover:text-rose-400 transition-colors">Spotlight</a>
                 <a href="#safety" class="hover:text-rose-400 transition-colors">Safety</a>
                 <a href="#faq" class="hover:text-rose-400 transition-colors">FAQ</a>
             </nav>
@@ -99,14 +102,12 @@
                     Admin Access
                 </a>
 
-                @if(!empty($settings['app_store_url']) || !empty($settings['google_play_url']))
-                    <a href="#download" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-semibold text-xs shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 transition-all">
-                        <span>Get the App</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                        </svg>
-                    </a>
-                @endif
+                <a href="#download" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-semibold text-xs shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40 transition-all">
+                    <span>Get Started</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </a>
             </div>
         </div>
     </header>
@@ -119,62 +120,45 @@
                 <div class="lg:col-span-7 space-y-8 text-center lg:text-left">
                     <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold tracking-wide">
                         <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
-                        {{ $settings['hero_badge_text'] ?? 'The Next Generation Social Dating Platform' }}
+                        {{ $settings['hero_headline'] ?? 'Meet. Connect. Go Live.' }}
                     </div>
 
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
-                        Connect Authentically, <br class="hidden sm:inline"/>
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-amber-500">Express Generously</span>
+                        Meet. Connect. <br class="hidden sm:inline"/>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-amber-500">Go Live.</span>
                     </h1>
 
                     <p class="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
-                        {{ $settings['hero_subtitle'] ?? 'Lindr combines real-time profile discovery, tokenized chat messages, instant virtual gifting, and automated creator earnings into one seamless mobile experience.' }}
+                        {{ $settings['hero_description'] ?? 'Discover real people, connect instantly and turn conversations into live video experiences.' }}
                     </p>
 
                     <!-- Download Buttons & CTA -->
                     <div class="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
-                        @if(!empty($settings['app_store_url']))
-                            <a href="{{ $settings['app_store_url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-rose-500/50 hover:bg-slate-800 text-white font-medium text-sm transition-all shadow-xl">
-                                <svg class="w-6 h-6 fill-current text-white" viewBox="0 0 24 24">
-                                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.32c.67-.82 1.13-1.96.99-3.12-1 .04-2.19.67-2.88 1.48-.61.71-1.15 1.87-.99 3.01 1.11.09 2.22-.55 2.88-1.37z"/>
-                                </svg>
-                                <div class="text-left leading-tight">
-                                    <div class="text-[10px] text-slate-400 uppercase font-semibold">Download on</div>
-                                    <div class="text-sm font-bold">App Store</div>
-                                </div>
-                            </a>
-                        @endif
+                        <a href="#download" class="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-bold text-sm transition-all shadow-xl shadow-rose-500/20">
+                            <span>Get Started</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
+                        </a>
 
-                        @if(!empty($settings['google_play_url']))
-                            <a href="{{ $settings['google_play_url'] }}" target="_blank" rel="noopener" class="inline-flex items-center gap-3 px-6 py-3.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-amber-500/50 hover:bg-slate-800 text-white font-medium text-sm transition-all shadow-xl">
-                                <svg class="w-6 h-6 fill-current text-white" viewBox="0 0 24 24">
-                                    <path d="M3 20.5v-17c0-.55.45-1 1-1h.5c.2 0 .38.07.53.2l12 10.5-12 10.5c-.15.13-.33.2-.53.2H4c-.55 0-1-.45-1-1zm14.8-7.8l3-2.6c.4-.35.4-.95 0-1.3l-3-2.6-3.2 2.8 3.2 3.7z"/>
-                                </svg>
-                                <div class="text-left leading-tight">
-                                    <div class="text-[10px] text-slate-400 uppercase font-semibold">Get it on</div>
-                                    <div class="text-sm font-bold">Google Play</div>
-                                </div>
-                            </a>
-                        @endif
-
-                        <a href="#features" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-medium text-sm transition-all">
-                            <span>Explore Features</span>
+                        <a href="#how-it-works" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-medium text-sm transition-all">
+                            <span>Explore Lindr</span>
                         </a>
                     </div>
                 </div>
 
-                <!-- Right Visual Column (Dual Images with Floating Badges) -->
+                <!-- Right Visual Column -->
                 <div class="lg:col-span-5 relative flex justify-center">
                     <div class="relative w-full max-w-sm sm:max-w-md">
                         <!-- Main Lifestyle Background Card -->
                         <div class="rounded-3xl overflow-hidden border border-slate-800 shadow-2xl shadow-rose-950/40 relative group">
-                            <img src="{{ $media['hero_lifestyle'] ?? asset('storage/landing/hero_lifestyle.png') }}" alt="Lindr Social Dating Lifestyle" class="w-full h-[420px] object-cover filter contrast-[1.05]">
+                            <img src="{{ $media['hero_lifestyle'] ?? asset('storage/landing/hero_lifestyle.png') }}" alt="Lindr Live Video Connections" class="w-full h-[420px] object-cover filter contrast-[1.05]">
                             <div class="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent"></div>
                         </div>
 
                         <!-- Phone Mockup Overlay -->
                         <div class="absolute -bottom-8 -right-4 sm:-right-8 w-48 sm:w-56 rounded-2xl overflow-hidden border-2 border-slate-700/80 shadow-2xl bg-slate-900 transform hover:scale-105 transition-transform duration-300">
-                            <img src="{{ $media['hero_phone_mockup'] ?? asset('storage/landing/hero_phone_mockup.png') }}" alt="Lindr Mobile App Mockup" class="w-full h-auto">
+                            <img src="{{ $media['hero_phone_mockup'] ?? asset('storage/landing/hero_phone_mockup.png') }}" alt="Lindr Mobile App Interface" class="w-full h-auto">
                         </div>
 
                         <!-- Floating Glassmorphism Badge 1 -->
@@ -183,8 +167,8 @@
                                 ♥
                             </div>
                             <div>
-                                <div class="text-xs font-bold text-white">Instant Matches</div>
-                                <div class="text-[10px] text-slate-400">100% Real Verification</div>
+                                <div class="text-xs font-bold text-white">Match & Discover</div>
+                                <div class="text-[10px] text-slate-400">Creator Verification</div>
                             </div>
                         </div>
 
@@ -194,8 +178,8 @@
                                 ⚡
                             </div>
                             <div>
-                                <div class="text-xs font-bold text-white">Instant Payouts</div>
-                                <div class="text-[10px] text-slate-400">M-Pesa & Bank Withdrawal</div>
+                                <div class="text-xs font-bold text-white">Creator Withdrawals</div>
+                                <div class="text-[10px] text-slate-400">M-Pesa & Supported Gateways</div>
                             </div>
                         </div>
                     </div>
@@ -204,183 +188,194 @@
         </div>
     </section>
 
-    <!-- 3. Core Platform Principles / 3 Pillars -->
-    <section id="features" class="py-20 bg-slate-900/40 border-y border-slate-800/60 relative">
+    <!-- 3. Match Section -->
+    <section id="match" class="py-20 bg-slate-900/40 border-y border-slate-800/60 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-rose-400">Core Experience</h2>
-                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Built for Genuine Connection & Mutual Respect</h3>
-                <p class="text-slate-400 text-sm sm:text-base">Every feature in Lindr is architected to foster authentic interaction, secure transactions, and transparent creator monetization.</p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Pillar 1 -->
-                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-rose-500/40 transition-all duration-300 group">
-                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
+                        Instant Live Connections
                     </div>
-                    <h4 class="text-xl font-bold text-white mb-3">Authentic Discovery</h4>
-                    <p class="text-slate-400 text-sm leading-relaxed">Discover real profiles filtered by location, interests, and activity. Our matching algorithms connect you with people looking for genuine interaction.</p>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Match Instantly</h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Tap Match and let Lindr find an available person for you. When someone accepts your connection request, you're instantly matched and can start a live video conversation.
+                    </p>
+
+                    <div class="space-y-4 pt-2">
+                        <div class="flex items-start gap-3 p-4 rounded-xl bg-[#111827] border border-slate-800">
+                            <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">1</div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white mb-0.5">Instant Request Routing</h4>
+                                <p class="text-xs text-slate-400">Match routes your connection request to available, eligible people on the platform.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-4 rounded-xl bg-[#111827] border border-slate-800">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">2</div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white mb-0.5">First to Accept Connects</h4>
+                                <p class="text-xs text-slate-400">The first eligible person to accept becomes your connection instantly.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3 p-4 rounded-xl bg-[#111827] border border-slate-800">
+                            <div class="w-7 h-7 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">3</div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white mb-0.5">Live Video Conversation</h4>
+                                <p class="text-xs text-slate-400">Your live video call begins right after connection for a face-to-face experience.</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Pillar 2 -->
-                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-amber-500/40 transition-all duration-300 group">
-                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                        </svg>
+                <div class="flex justify-center">
+                    <div class="bg-[#111827] rounded-3xl border border-slate-800 p-6 max-w-md w-full shadow-2xl hover:border-rose-500/40 transition-colors">
+                        <div class="rounded-2xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
+                            <img src="{{ $media['match_screen'] ?? asset('storage/landing/match_screen.png') }}" alt="Match Connection Screen" class="w-full h-80 object-cover">
+                        </div>
+                        <h4 class="text-base font-bold text-white text-center mb-1">Instant Match Request</h4>
+                        <p class="text-xs text-slate-400 text-center">Connect directly with active available users with a single tap.</p>
                     </div>
-                    <h4 class="text-xl font-bold text-white mb-3">Coin-Powered Chat</h4>
-                    <p class="text-slate-400 text-sm leading-relaxed">Send single paid messages or unlock unlimited conversation windows using internal Lindr Coins. Quality interactions over spam.</p>
-                </div>
-
-                <!-- Pillar 3 -->
-                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-purple-500/40 transition-all duration-300 group">
-                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                    </div>
-                    <h4 class="text-xl font-bold text-white mb-3">Empowering Creator Earnings</h4>
-                    <p class="text-slate-400 text-sm leading-relaxed">Female users earn real coins for active chatting and virtual gift receipts, convertible straight to M-Pesa or local bank accounts.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 4. App Interface Showcase (4 Mockup Showcase) -->
-    <section class="py-24 relative overflow-hidden">
+    <!-- 4. Discover Section -->
+    <section id="discover" class="py-24 relative overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-amber-400">Designed for Mobile</h2>
-                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Sleek, Fast & Intuitive Mobile Interface</h3>
-                <p class="text-slate-400 text-sm sm:text-base">Experience fluid 60fps mobile interaction with instant notifications and effortless navigation.</p>
+                <h2 class="text-xs font-bold uppercase tracking-widest text-amber-400">Explore Active People</h2>
+                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Discover People</h3>
+                <p class="text-slate-400 text-sm sm:text-base">Browse active profiles, explore interests, see who's available and choose who you'd like to connect with.</p>
             </div>
 
-            <!-- Interface Grid -->
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Highlight 1 -->
+                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-rose-500/40 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-3">Detailed Profiles & Photos</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">Explore profile photos, age, country, interests, and profile information to find people you resonate with.</p>
+                </div>
+
+                <!-- Highlight 2 -->
+                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-amber-500/40 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 18.364a9 9 0 010-12.728m12.728 0a9 9 0 010 12.728M9.172 14.828a4 4 0 010-5.656m5.656 0a4 4 0 010 5.656M12 12h.01"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-3">Live Active Status</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">See who is currently active and available on the platform so you can initiate timely connections.</p>
+                </div>
+
+                <!-- Highlight 3 -->
+                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-purple-500/40 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-6">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <h4 class="text-xl font-bold text-white mb-3">Creator Verification Badges</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed">Identify verified creators who have completed selfie and liveness verification for enhanced authenticity.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Live Video Calling Section -->
+    <section id="live-video" class="py-20 bg-slate-900/40 border-y border-slate-800/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="flex justify-center order-2 lg:order-1">
+                    <div class="bg-[#111827] rounded-3xl border border-slate-800 p-6 max-w-md w-full shadow-2xl">
+                        <div class="rounded-2xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
+                            <img src="{{ $media['discover_screen'] ?? asset('storage/landing/discover_screen.png') }}" alt="Live Video Calling Interface" class="w-full h-80 object-cover">
+                        </div>
+                        <h4 class="text-base font-bold text-white text-center mb-1">Real-Time Face-to-Face Video</h4>
+                        <p class="text-xs text-slate-400 text-center">Crystal-clear video powered by Lindr platform infrastructure.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6 order-1 lg:order-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold">
+                        Real-Time Interactivity
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Talk Face to Face</h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Connect through live video and have real-time conversations with people you meet on Lindr.
+                    </p>
+                    <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
+                        <li class="flex items-center gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">✓</span>
+                            <span>Initiate live video calls through eligible connections</span>
+                        </li>
+                        <li class="flex items-center gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">✓</span>
+                            <span>Calls use Lindr Tokens where applicable</span>
+                        </li>
+                        <li class="flex items-center gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xs">✓</span>
+                            <span>Creator earnings seamlessly accumulated on eligible calls</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Tokens Economy Section -->
+    <section id="tokens" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-amber-400">Platform Economy</h2>
+                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Lindr Tokens</h3>
+                <p class="text-slate-400 text-sm sm:text-base">Use Lindr Tokens for Match, video calls, gifts and other premium interactions.</p>
+            </div>
+
+            <!-- Token Package Tiers -->
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Card 1: Discover -->
-                <div class="bg-[#111827] rounded-2xl border border-slate-800 p-4 flex flex-col items-center hover:border-rose-500/40 transition-colors">
-                    <div class="w-full rounded-xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
-                        <img src="{{ $media['discover_screen'] ?? asset('storage/landing/discover_screen.png') }}" alt="Discover Screen" class="w-full h-64 object-cover">
-                    </div>
-                    <h4 class="text-base font-bold text-white mb-1">Discovery Feed</h4>
-                    <p class="text-xs text-slate-400 text-center">Swipe through verified nearby profiles with detailed bios and photos.</p>
-                </div>
-
-                <!-- Card 2: Match -->
-                <div class="bg-[#111827] rounded-2xl border border-slate-800 p-4 flex flex-col items-center hover:border-rose-500/40 transition-colors">
-                    <div class="w-full rounded-xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
-                        <img src="{{ $media['match_screen'] ?? asset('storage/landing/match_screen.png') }}" alt="Match Screen" class="w-full h-64 object-cover">
-                    </div>
-                    <h4 class="text-base font-bold text-white mb-1">Instant Matches</h4>
-                    <p class="text-xs text-slate-400 text-center">Instant double-opt-in matching celebration and direct message trigger.</p>
-                </div>
-
-                <!-- Card 3: Chat -->
-                <div class="bg-[#111827] rounded-2xl border border-slate-800 p-4 flex flex-col items-center hover:border-rose-500/40 transition-colors">
-                    <div class="w-full rounded-xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
-                        <img src="{{ $media['chat_screen'] ?? asset('storage/landing/chat_screen.png') }}" alt="Chat Screen" class="w-full h-64 object-cover">
-                    </div>
-                    <h4 class="text-base font-bold text-white mb-1">Realtime Chat</h4>
-                    <p class="text-xs text-slate-400 text-center">1-on-1 private messaging with integrated virtual gift sender.</p>
-                </div>
-
-                <!-- Card 4: Wallet -->
-                <div class="bg-[#111827] rounded-2xl border border-slate-800 p-4 flex flex-col items-center hover:border-rose-500/40 transition-colors">
-                    <div class="w-full rounded-xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
-                        <img src="{{ $media['wallet_screen'] ?? asset('storage/landing/wallet_screen.png') }}" alt="Wallet Screen" class="w-full h-64 object-cover">
-                    </div>
-                    <h4 class="text-base font-bold text-white mb-1">Coin Wallet</h4>
-                    <p class="text-xs text-slate-400 text-center">Real-time balance, package top-up, and withdrawal status tracker.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 5. How Matching Works -->
-    <section id="how-it-works" class="py-20 bg-slate-900/40 border-y border-slate-800/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-rose-400">Step-By-Step</h2>
-                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">How Lindr Works in 3 Simple Steps</h3>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8 relative">
-                <!-- Step 1 -->
-                <div class="relative p-8 rounded-2xl bg-[#111827] border border-slate-800">
-                    <div class="text-4xl font-black text-rose-500/30 mb-4">01</div>
-                    <h4 class="text-lg font-bold text-white mb-2">Create & Discover</h4>
-                    <p class="text-xs text-slate-400 leading-relaxed">Sign up in seconds, upload your best photos, set your preferences, and start exploring genuine local profiles.</p>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="relative p-8 rounded-2xl bg-[#111827] border border-slate-800">
-                    <div class="text-4xl font-black text-amber-500/30 mb-4">02</div>
-                    <h4 class="text-lg font-bold text-white mb-2">Like & Match</h4>
-                    <p class="text-xs text-slate-400 leading-relaxed">Express interest with a simple swipe or like. When mutual interest occurs, a match is instantly created.</p>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="relative p-8 rounded-2xl bg-[#111827] border border-slate-800">
-                    <div class="text-4xl font-black text-purple-500/30 mb-4">03</div>
-                    <h4 class="text-lg font-bold text-white mb-2">Chat & Send Gifts</h4>
-                    <p class="text-xs text-slate-400 leading-relaxed">Initiate conversation using coins, send virtual gifts to delight your match, and build genuine social connections.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 6. Paid Chat & Coin Packages Teaser -->
-    <section id="coins" class="py-24 relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                <h2 class="text-xs font-bold uppercase tracking-widest text-amber-400">Transparent Token Economy</h2>
-                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Flexible Lindr Coin Packages</h3>
-                <p class="text-slate-400 text-sm sm:text-base">No hidden subscriptions. Purchase coins on demand via M-Pesa, Flutterwave, or KoraPay and spend them on your terms.</p>
-            </div>
-
-            <!-- Coin Packages Grid -->
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <!-- Package 1 -->
+                <!-- Tier 1 -->
                 <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
                     <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Starter</div>
-                        <div class="text-3xl font-extrabold text-white mb-1">100 <span class="text-amber-400 text-sm">Coins</span></div>
-                        <p class="text-xs text-slate-400 mb-6">Perfect for sending initial messages and trying out virtual gifts.</p>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Starter Pack</div>
+                        <div class="text-3xl font-extrabold text-white mb-1">Tokens</div>
+                        <p class="text-xs text-slate-400 mb-6">Ideal for making initial Match requests and trying out digital gifts.</p>
                     </div>
-                    <div class="text-xs font-bold text-slate-300 py-2 border-t border-slate-800">Instant Activation</div>
+                    <div class="text-xs font-bold text-slate-300 py-2 border-t border-slate-800">Instant Wallet Top-Up</div>
                 </div>
 
-                <!-- Package 2 -->
+                <!-- Tier 2 -->
                 <div class="p-6 rounded-2xl bg-[#111827] border border-rose-500/50 flex flex-col justify-between relative shadow-xl shadow-rose-950/20">
-                    <div class="absolute -top-3 right-4 px-3 py-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold uppercase">Most Popular</div>
+                    <div class="absolute -top-3 right-4 px-3 py-1 rounded-full bg-rose-500 text-white text-[10px] font-extrabold uppercase">Popular</div>
                     <div>
-                        <div class="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">Popular</div>
-                        <div class="text-3xl font-extrabold text-white mb-1">500 <span class="text-amber-400 text-sm">Coins</span></div>
-                        <p class="text-xs text-slate-400 mb-6">Great value for active daters looking to stay connected.</p>
+                        <div class="text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">Popular Pack</div>
+                        <div class="text-3xl font-extrabold text-white mb-1">Tokens</div>
+                        <p class="text-xs text-slate-400 mb-6">Great value for regular live video calls and sending digital gifts.</p>
                     </div>
-                    <div class="text-xs font-bold text-rose-400 py-2 border-t border-slate-800">Includes Bonus Gifts</div>
+                    <div class="text-xs font-bold text-rose-400 py-2 border-t border-slate-800">Best For Video Calls</div>
                 </div>
 
-                <!-- Package 3 -->
+                <!-- Tier 3 -->
                 <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition-all">
                     <div>
-                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pro</div>
-                        <div class="text-3xl font-extrabold text-white mb-1">1,200 <span class="text-amber-400 text-sm">Coins</span></div>
-                        <p class="text-xs text-slate-400 mb-6">Unlocks high-tier virtual gifts and high-volume messaging.</p>
+                        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Pro Pack</div>
+                        <div class="text-3xl font-extrabold text-white mb-1">Tokens</div>
+                        <p class="text-xs text-slate-400 mb-6">Designed for active users engaging in frequent conversations and gifts.</p>
                     </div>
-                    <div class="text-xs font-bold text-slate-300 py-2 border-t border-slate-800">VIP Priority Match</div>
+                    <div class="text-xs font-bold text-slate-300 py-2 border-t border-slate-800">High Volume Messaging</div>
                 </div>
 
-                <!-- Package 4 -->
+                <!-- Tier 4 -->
                 <div class="p-6 rounded-2xl bg-[#111827] border border-amber-500/40 flex flex-col justify-between hover:border-amber-500 transition-all">
                     <div>
-                        <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Ultimate</div>
-                        <div class="text-3xl font-extrabold text-white mb-1">3,000 <span class="text-amber-400 text-sm">Coins</span></div>
-                        <p class="text-xs text-slate-400 mb-6">Maximum savings for power users and top gift senders.</p>
+                        <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider mb-2">Ultimate Pack</div>
+                        <div class="text-3xl font-extrabold text-white mb-1">Tokens</div>
+                        <p class="text-xs text-slate-400 mb-6">Maximum value tier for power users and top gift supporters.</p>
                     </div>
                     <div class="text-xs font-bold text-amber-400 py-2 border-t border-slate-800">Best Value Tier</div>
                 </div>
@@ -388,80 +383,50 @@
         </div>
     </section>
 
-    <!-- 7. Virtual Gifts Showcase -->
-    <section class="py-20 bg-slate-900/40 border-y border-slate-800/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
-                <div class="space-y-6">
-                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
-                        Animated Appreciation
-                    </div>
-                    <h3 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Delight Your Match with Digital Virtual Gifts</h3>
-                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-                        Say more than words can express. Choose from dozens of custom animated gifts—from red roses to gold crowns—to make every conversation memorable.
-                    </p>
-                    <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
-                        <li class="flex items-center gap-2.5">
-                            <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">✓</span>
-                            <span>Instant in-chat gift animations</span>
-                        </li>
-                        <li class="flex items-center gap-2.5">
-                            <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">✓</span>
-                            <span>Direct coin value transfer to recipient</span>
-                        </li>
-                        <li class="flex items-center gap-2.5">
-                            <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">✓</span>
-                            <span>Exclusive limited-edition gift collection</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="flex justify-center">
-                    <div class="rounded-2xl overflow-hidden border border-slate-800 max-w-md shadow-2xl">
-                        <img src="{{ $media['gifts_screen'] ?? asset('storage/landing/gifts_screen.png') }}" alt="Virtual Gifts Grid" class="w-full h-auto">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 8. Female Creator Earnings & Withdrawals -->
-    <section id="earnings" class="py-24 relative">
+    <!-- 7. Earn as a Verified Creator Section -->
+    <section id="creators" class="py-24 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-gradient-to-br from-[#111827] via-slate-900 to-slate-950 p-8 sm:p-12 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden">
                 <div class="grid lg:grid-cols-12 gap-8 items-center relative z-10">
                     <div class="lg:col-span-7 space-y-6">
                         <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-                            Transparent Monetization
+                            Creator Earnings
                         </div>
-                        <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Earn Real Value for Engaging & Gifting</h3>
+                        <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Earn as a Verified Creator</h2>
                         <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-                            Lindr rewards active female creators. Coins received from incoming messages and virtual gifts accumulate directly in your earnings wallet for instant payout.
+                            Verified creators can earn Credits from eligible monetized interactions such as video calls and gifts. Both verified women and verified men can complete creator verification and earn on Lindr.
                         </p>
 
                         <div class="grid sm:grid-cols-2 gap-4 pt-2">
                             <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <div class="text-amber-400 font-bold text-base mb-1">M-Pesa Direct</div>
-                                <p class="text-xs text-slate-400">Withdraw earnings directly to Safaricom M-Pesa in Kenya.</p>
+                                <div class="text-amber-400 font-bold text-sm mb-1">Tokens vs Credits</div>
+                                <p class="text-xs text-slate-400">Users spend <strong class="text-slate-200">Tokens</strong> for interactions. Verified creators earn <strong class="text-slate-200">Credits</strong> from eligible calls and gifts.</p>
                             </div>
                             <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800">
-                                <div class="text-amber-400 font-bold text-base mb-1">Automated Processing</div>
-                                <p class="text-xs text-slate-400">Payout requests are reviewed and disbursed rapidly.</p>
+                                <div class="text-amber-400 font-bold text-sm mb-1">Gender-Inclusive Eligibility</div>
+                                <p class="text-xs text-slate-400">Both verified female and male creators can complete liveness verification and earn.</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="lg:col-span-5 flex justify-center">
                         <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 w-full max-w-sm space-y-4">
-                            <div class="text-xs font-bold text-slate-400 uppercase">Creator Earnings Overview</div>
-                            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex justify-between items-center">
-                                <div>
-                                    <div class="text-[10px] text-slate-500">Withdrawable Balance</div>
-                                    <div class="text-xl font-extrabold text-white">3,450 <span class="text-amber-400 text-xs">Coins</span></div>
+                            <div class="text-xs font-bold text-slate-400 uppercase">Creator Earnings Model</div>
+                            <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400">User Spends:</span>
+                                    <span class="text-xs font-bold text-amber-400">Tokens</span>
                                 </div>
-                                <div class="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 text-xs font-bold">Ready</div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400">Creator Earns:</span>
+                                    <span class="text-xs font-bold text-emerald-400">Credits</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-slate-400">Verification:</span>
+                                    <span class="text-xs font-bold text-purple-400">Selfie Liveness</span>
+                                </div>
                             </div>
-                            <div class="text-[11px] text-slate-400 text-center">100% Payout Visibility • Zero Hidden Processing Fees</div>
+                            <div class="text-[11px] text-slate-400 text-center">Transparent Platform Credit Accumulation</div>
                         </div>
                     </div>
                 </div>
@@ -469,54 +434,165 @@
         </div>
     </section>
 
-    <!-- 9. Multi-Gateway Financial Infrastructure -->
-    <section class="py-16 bg-slate-900/40 border-y border-slate-800/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-            <h4 class="text-xs font-bold uppercase tracking-widest text-slate-400">Supported Secure Payment Gateways</h4>
-            <div class="flex flex-wrap items-center justify-center gap-8 sm:gap-16 opacity-80 filter grayscale hover:grayscale-0 transition-all">
-                <div class="flex items-center gap-2 text-slate-300 font-bold text-lg sm:text-xl">
-                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span> M-Pesa Daraja
+    <!-- 8. Send Digital Gifts Section -->
+    <section id="gifts" class="py-20 bg-slate-900/40 border-y border-slate-800/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
+                        Digital Expressions
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Send Gifts</h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Show appreciation with digital gifts during your Lindr experience.
+                    </p>
+                    <ul class="space-y-3 text-xs sm:text-sm text-slate-300">
+                        <li class="flex items-center gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">✓</span>
+                            <span>Users spend Tokens to send digital gifts</span>
+                        </li>
+                        <li class="flex items-center gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">✓</span>
+                            <span>Verified creators can earn Credits from eligible gifts</span>
+                        </li>
+                        <li class="flex items-center gap-2.5">
+                            <span class="w-5 h-5 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">✓</span>
+                            <span>Custom animated gift catalogue inside chat and video calls</span>
+                        </li>
+                    </ul>
                 </div>
-                <div class="flex items-center gap-2 text-slate-300 font-bold text-lg sm:text-xl">
-                    <span class="w-3 h-3 rounded-full bg-amber-500"></span> Flutterwave
-                </div>
-                <div class="flex items-center gap-2 text-slate-300 font-bold text-lg sm:text-xl">
-                    <span class="w-3 h-3 rounded-full bg-blue-500"></span> KoraPay
-                </div>
-                <div class="flex items-center gap-2 text-slate-300 font-bold text-lg sm:text-xl">
-                    <span class="w-3 h-3 rounded-full bg-purple-500"></span> Google Pay
+
+                <div class="flex justify-center">
+                    <div class="rounded-2xl overflow-hidden border border-slate-800 max-w-md shadow-2xl">
+                        <img src="{{ $media['gifts_screen'] ?? asset('storage/landing/gifts_screen.png') }}" alt="Digital Gifts Catalogue" class="w-full h-auto">
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 10. Safety, Privacy & Verification -->
-    <section id="safety" class="py-24 relative">
+    <!-- 9. Chat & Connect Section -->
+    <section id="chat" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div class="flex justify-center order-2 lg:order-1">
+                    <div class="bg-[#111827] rounded-3xl border border-slate-800 p-6 max-w-md w-full shadow-2xl">
+                        <div class="rounded-2xl overflow-hidden mb-4 bg-slate-900 border border-slate-800">
+                            <img src="{{ $media['chat_screen'] ?? asset('storage/landing/chat_screen.png') }}" alt="Chat & Connect Interface" class="w-full h-80 object-cover">
+                        </div>
+                        <h4 class="text-base font-bold text-white text-center mb-1">Direct 1-on-1 Messaging</h4>
+                        <p class="text-xs text-slate-400 text-center">Send private messages and connect seamlessly.</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6 order-1 lg:order-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+                        Private Messaging
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Chat & Connect</h2>
+                    <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                        Start conversations, exchange messages and stay connected with people you discover on Lindr.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 10. Spotlight & Levels Section -->
+    <section id="spotlight" class="py-20 bg-slate-900/40 border-y border-slate-800/60">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid lg:grid-cols-2 gap-8">
+                <!-- Spotlight Card -->
+                <div class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-amber-500/40 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mb-6 font-bold">
+                        ⚡
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Get Seen With Lindr Spotlight</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Boost your visibility across eligible discovery surfaces for a limited period to increase your profile exposure.
+                    </p>
+                    <p class="text-xs text-slate-500">
+                        *Spotlight enhances discovery exposure across eligible surfaces without bypassing safety or moderation rules.
+                    </p>
+                </div>
+
+                <!-- Levels Card -->
+                <div id="levels" class="p-8 rounded-2xl bg-[#111827] border border-slate-800 hover:border-rose-500/40 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center mb-6 font-bold">
+                        ★
+                    </div>
+                    <h3 class="text-2xl font-bold text-white mb-3">Lindr Levels</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Build your Lindr profile and activity over time to unlock greater exposure and benefits on the platform.
+                    </p>
+                    <p class="text-xs text-slate-500">
+                        *Progression is tied to profile completion and genuine platform engagement.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 11. Creator Withdrawals Section -->
+    <section id="withdrawals" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl space-y-6">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                Financial Infrastructure
+            </div>
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Creator Withdrawals</h2>
+            <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+                Verified creators can redeem eligible Credits through supported withdrawal methods. Kenyan creators can use supported M-Pesa withdrawal functionality.
+            </p>
+
+            <div class="flex flex-wrap items-center justify-center gap-8 pt-4">
+                <div class="flex items-center gap-2 text-slate-300 font-bold text-base">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500"></span> M-Pesa (Kenya)
+                </div>
+                <div class="flex items-center gap-2 text-slate-300 font-bold text-base">
+                    <span class="w-3 h-3 rounded-full bg-amber-500"></span> Flutterwave
+                </div>
+                <div class="flex items-center gap-2 text-slate-300 font-bold text-base">
+                    <span class="w-3 h-3 rounded-full bg-blue-500"></span> KoraPay
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 12. Safety Section -->
+    <section id="safety" class="py-24 bg-slate-900/40 border-y border-slate-800/60 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid lg:grid-cols-2 gap-12 items-center">
                 <div class="flex justify-center order-2 lg:order-1">
                     <div class="rounded-2xl overflow-hidden border border-slate-800 max-w-md shadow-2xl">
-                        <img src="{{ $media['safety_illustration'] ?? asset('storage/landing/safety_illustration.png') }}" alt="Lindr Safety & Security" class="w-full h-auto">
+                        <img src="{{ $media['safety_illustration'] ?? asset('storage/landing/safety_illustration.png') }}" alt="Lindr Community Safety" class="w-full h-auto">
                     </div>
                 </div>
 
                 <div class="space-y-6 order-1 lg:order-2">
                     <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-semibold">
-                        Your Safety Comes First
+                        Community Safety
                     </div>
-                    <h3 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Bank-Grade Protection & Safety Tools</h3>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white leading-tight">Built With Community Safety In Mind</h2>
                     <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
-                        Lindr enforces zero tolerance for harassment, fake profiles, or spam. Your personal contact information is never disclosed to other users.
+                        Lindr uses verification, reporting, blocking and moderation tools to help keep the community safer.
                     </p>
 
                     <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl bg-[#111827] border border-slate-800">
+                            <div class="text-white font-bold text-sm mb-1">Creator Verification</div>
+                            <p class="text-xs text-slate-400">Creators complete selfie/liveness verification before they can earn.</p>
+                        </div>
                         <div class="p-4 rounded-xl bg-[#111827] border border-slate-800">
                             <div class="text-white font-bold text-sm mb-1">1-Click Blocking</div>
                             <p class="text-xs text-slate-400">Instantly block any user from contacting you ever again.</p>
                         </div>
                         <div class="p-4 rounded-xl bg-[#111827] border border-slate-800">
                             <div class="text-white font-bold text-sm mb-1">Report Escalation</div>
-                            <p class="text-xs text-slate-400">24/7 moderation team reviews reports and enforces bans.</p>
+                            <p class="text-xs text-slate-400">Reporting features allow rapid review of inappropriate behavior.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-[#111827] border border-slate-800">
+                            <div class="text-white font-bold text-sm mb-1">Community Guidelines</div>
+                            <p class="text-xs text-slate-400">Enforced guidelines maintain a respectful user environment.</p>
                         </div>
                     </div>
                 </div>
@@ -524,21 +600,48 @@
         </div>
     </section>
 
-    <!-- 11. Mobile Experience Highlight -->
-    <section class="py-20 bg-slate-900/40 border-y border-slate-800/60">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl space-y-6">
-            <h3 class="text-3xl font-extrabold text-white">Powered by Expo & React Native</h3>
-            <p class="text-slate-300 text-sm sm:text-base">
-                Enjoy a native app experience on both iOS and Android. Optimized for fast startup times, low data consumption, and instant push notifications.
-            </p>
-            <div class="flex justify-center">
-                <img src="{{ $media['download_app_mockup'] ?? asset('storage/landing/download_app_mockup.png') }}" alt="Mobile Application Preview" class="w-full max-w-md rounded-2xl border border-slate-800 shadow-2xl">
+    <!-- 13. How Lindr Works Section -->
+    <section id="how-it-works" class="py-24 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-rose-400">Simple Experience</h2>
+                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">How Lindr Works</h3>
+            </div>
+
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Step 1 -->
+                <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800">
+                    <div class="text-3xl font-black text-rose-500/40 mb-3">01</div>
+                    <h4 class="text-lg font-bold text-white mb-2">Sign Up</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Join Lindr with Google and complete your profile.</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800">
+                    <div class="text-3xl font-black text-amber-500/40 mb-3">02</div>
+                    <h4 class="text-lg font-bold text-white mb-2">Discover</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Explore active people and their interests.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800">
+                    <div class="text-3xl font-black text-purple-500/40 mb-3">03</div>
+                    <h4 class="text-lg font-bold text-white mb-2">Connect</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Use Match, chat, gifts or video calls to connect.</p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="p-6 rounded-2xl bg-[#111827] border border-slate-800">
+                    <div class="text-3xl font-black text-emerald-500/40 mb-3">04</div>
+                    <h4 class="text-lg font-bold text-white mb-2">Go Live</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">Have real-time video conversations with your connections.</p>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- 12. Frequently Asked Questions (FAQ Accordion with Alpine.js) -->
-    <section id="faq" class="py-24 relative" x-data="{ activeFaq: null }">
+    <!-- 14. Frequently Asked Questions (FAQ Accordion with Alpine.js) -->
+    <section id="faq" class="py-24 bg-slate-900/40 border-y border-slate-800/60 relative" x-data="{ activeFaq: null }">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center mb-16 space-y-4">
                 <h2 class="text-xs font-bold uppercase tracking-widest text-rose-400">Got Questions?</h2>
@@ -566,33 +669,25 @@
         </div>
     </section>
 
-    <!-- 13. Final Download Call to Action (CTA) -->
+    <!-- 15. Final Call to Action (CTA) -->
     <section id="download" class="py-24 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 rounded-3xl p-8 sm:p-16 text-center text-white relative overflow-hidden shadow-2xl">
                 <div class="max-w-2xl mx-auto space-y-6 relative z-10">
-                    <h3 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">Ready to Find Your Match?</h3>
-                    <p class="text-rose-100 text-sm sm:text-lg">Download Lindr today and start building genuine social connections instantly.</p>
+                    <h3 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">Meet. Connect. Go Live.</h3>
+                    <p class="text-rose-100 text-sm sm:text-lg">Discover real people, connect instantly and turn conversations into live video experiences.</p>
 
                     <div class="flex flex-wrap justify-center gap-4 pt-4">
-                        @if(!empty($settings['app_store_url']))
-                            <a href="{{ $settings['app_store_url'] }}" target="_blank" rel="noopener" class="px-8 py-4 rounded-xl bg-slate-950 text-white font-bold text-sm shadow-xl hover:bg-slate-900 transition-colors">
-                                Download on App Store
-                            </a>
-                        @endif
-
-                        @if(!empty($settings['google_play_url']))
-                            <a href="{{ $settings['google_play_url'] }}" target="_blank" rel="noopener" class="px-8 py-4 rounded-xl bg-slate-950 text-white font-bold text-sm shadow-xl hover:bg-slate-900 transition-colors">
-                                Get it on Google Play
-                            </a>
-                        @endif
+                        <a href="#download" class="px-8 py-4 rounded-xl bg-slate-950 text-white font-bold text-sm shadow-xl hover:bg-slate-900 transition-colors">
+                            Get Started on Lindr
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- 14. Protected Admin Access Notice Section -->
+    <!-- 16. Protected Admin Access Notice Section -->
     <section class="py-8 bg-slate-950 border-t border-slate-900 text-center">
         <div class="max-w-7xl mx-auto px-4 text-xs text-slate-500 flex items-center justify-center gap-2">
             <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,7 +698,7 @@
         </div>
     </section>
 
-    <!-- 15. Comprehensive Footer -->
+    <!-- 17. Comprehensive Footer -->
     <footer class="bg-[#070A11] border-t border-slate-800/80 pt-16 pb-12 text-slate-400 text-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -616,7 +711,7 @@
                         <span class="text-lg font-bold text-white">Lindr</span>
                     </div>
                     <p class="text-slate-400 text-xs leading-relaxed">
-                        Modern social dating platform connecting verified users with tokenized chat, virtual gifts, and instant payout infrastructure.
+                        Social discovery and live video connection platform. Connect through Match or Discover, chat, send gifts, and have live video calls.
                     </p>
                 </div>
 
@@ -624,21 +719,22 @@
                 <div class="space-y-3">
                     <div class="text-xs font-bold text-white uppercase tracking-wider">Product</div>
                     <ul class="space-y-2">
-                        <li><a href="#features" class="hover:text-white transition-colors">Features</a></li>
-                        <li><a href="#how-it-works" class="hover:text-white transition-colors">How It Works</a></li>
-                        <li><a href="#coins" class="hover:text-white transition-colors">Coins & Packages</a></li>
-                        <li><a href="#earnings" class="hover:text-white transition-colors">Creator Earnings</a></li>
+                        <li><a href="#match" class="hover:text-white transition-colors">Match</a></li>
+                        <li><a href="#discover" class="hover:text-white transition-colors">Discover</a></li>
+                        <li><a href="#live-video" class="hover:text-white transition-colors">Live Video</a></li>
+                        <li><a href="#tokens" class="hover:text-white transition-colors">Tokens</a></li>
+                        <li><a href="#creators" class="hover:text-white transition-colors">Creators</a></li>
                     </ul>
                 </div>
 
-                <!-- Col 3: Safety & Legal -->
+                <!-- Col 3: Trust & Safety -->
                 <div class="space-y-3">
                     <div class="text-xs font-bold text-white uppercase tracking-wider">Trust & Legal</div>
                     <ul class="space-y-2">
                         <li><a href="#safety" class="hover:text-white transition-colors">Safety Center</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Privacy Policy</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Terms of Service</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Community Guidelines</a></li>
+                        <li><a href="#withdrawals" class="hover:text-white transition-colors">Creator Withdrawals</a></li>
+                        <li><a href="#faq" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="/access" class="hover:text-white transition-colors">Admin Access</a></li>
                     </ul>
                 </div>
 
@@ -651,7 +747,7 @@
                     </a>
                     <div class="pt-2 flex items-center gap-2 text-emerald-400 font-medium">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>API Systems 100% Operational</span>
+                        <span>API Systems Operational</span>
                     </div>
                 </div>
             </div>

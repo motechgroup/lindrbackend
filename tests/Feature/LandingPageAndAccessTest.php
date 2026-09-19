@@ -48,8 +48,7 @@ class LandingPageAndAccessTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Lindr');
-        $response->assertSee('Connect Authentically');
-        $response->assertSee('How does Lindr work?');
+        $response->assertSee('Meet. Connect. Go Live.');
         $response->assertSee('Admin Access');
     }
 

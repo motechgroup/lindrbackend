@@ -87,13 +87,14 @@ class DeploymentRecordResource extends Resource
                     ->label('View Commits & Metadata')
                     ->color('info')
                     ->modalHeading('Latest Repository Commits')
-                    ->modalDescription(function () {
+                    ->modalDescription('Recent commit history from local git log or GitHub REST API.')
+                    ->modalContent(function () {
                         /** @var DeploymentService $service */
                         $service = app(DeploymentService::class);
                         $commits = $service->getRecentCommits(10);
 
                         if (empty($commits)) {
-                            return 'No commit history retrieved.';
+                            return new HtmlString('<div style="padding: 12px; color: #94a3b8;">No commit history retrieved.</div>');
                         }
 
                         $html = '<div style="font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px;">';
@@ -115,7 +116,8 @@ class DeploymentRecordResource extends Resource
                     ->label('Inspect Changes (Diff)')
                     ->color('warning')
                     ->modalHeading('Git Changes Preview (Diff)')
-                    ->modalDescription(function () {
+                    ->modalDescription('Incoming repository changes preview.')
+                    ->modalContent(function () {
                         /** @var DeploymentService $service */
                         $service = app(DeploymentService::class);
                         $diff = $service->getCommitDiff();
@@ -231,7 +233,8 @@ class DeploymentRecordResource extends Resource
                     ->label('Log Output')
                     ->icon(Heroicon::OutlinedDocumentText)
                     ->modalHeading(fn (DeploymentRecord $record) => "Execution Output - Deployment #{$record->id} ({$record->action})")
-                    ->modalDescription(function (DeploymentRecord $record) {
+                    ->modalDescription('Execution output log details.')
+                    ->modalContent(function (DeploymentRecord $record) {
                         $log = $record->output_summary ?: $record->error_summary ?: 'No output recorded.';
                         $html = '<pre style="font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap;">'.e($log).'</pre>';
 

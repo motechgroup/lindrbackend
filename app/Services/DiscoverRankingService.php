@@ -48,23 +48,6 @@ class DiscoverRankingService
         $completenessBonus = ($completenessScore / 100.0) * 30.0;
         $score += $completenessBonus;
 
-        // Shared Interest Relevance Contribution (up to +40 pts)
-        if ($viewer && $viewer->id !== $user->id) {
-            $viewerInterests = $viewer->relationLoaded('interests') && $viewer->interests->count() > 0
-                ? $viewer->interests->pluck('name')->toArray()
-                : ($viewer->interests()->pluck('name')->toArray() ?: ($viewer->profile?->interests ?? []));
-
-            $userInterests = $user->relationLoaded('interests') && $user->interests->count() > 0
-                ? $user->interests->pluck('name')->toArray()
-                : ($user->interests()->pluck('name')->toArray() ?: ($user->profile?->interests ?? []));
-
-            if (! empty($viewerInterests) && ! empty($userInterests)) {
-                $sharedCount = count(array_intersect($viewerInterests, $userInterests));
-                $interestRatio = $sharedCount / max(1, count($viewerInterests));
-                $score += round($interestRatio * 40.0, 2);
-            }
-        }
-
         // Level contribution (exposure_multiplier)
         $levelData = $this->levelService->getUserLevelData($user);
         $exposureMult = (float) ($levelData['exposure_multiplier'] ?? 1.0);

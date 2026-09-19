@@ -149,35 +149,22 @@ class User extends Authenticatable implements FilamentUser
             return 0;
         }
 
-        // 1. Primary Photo or Avatar (+25)
+        // 1. Primary Photo or Avatar (+40)
         if (! empty($this->avatar) || $this->photos()->where('is_primary', true)->exists() || $this->photos()->exists()) {
-            $score += 25;
+            $score += 40;
         }
 
-        // 2. Bio filled (+25)
-        if (! empty($profile->bio) && strlen(trim($profile->bio)) >= 5) {
-            $score += 25;
+        // 2. Display Name or Username (+30)
+        if (! empty($profile->display_name) || ! empty($this->name)) {
+            $score += 30;
         }
 
-        // 3. Interests selected (+25)
-        $interestCount = $this->interests()->count();
-        if ($interestCount >= 3) {
-            $score += 25;
-        } elseif ($interestCount > 0) {
-            $score += 15;
-        }
-
-        // 4. Additional Photos (+15)
+        // 3. Photos uploaded (+30)
         $photoCount = $this->photos()->count();
         if ($photoCount >= 2) {
-            $score += 15;
+            $score += 30;
         } elseif ($photoCount >= 1) {
-            $score += 10;
-        }
-
-        // 5. City or Display Name (+10)
-        if (! empty($profile->display_name) || ! empty($profile->city)) {
-            $score += 10;
+            $score += 20;
         }
 
         return min(100, $score);

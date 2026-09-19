@@ -11,7 +11,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -227,8 +226,8 @@ class DeploymentRecordResource extends Resource
                         }
                     }),
             ])
-            ->actions([
-                TableAction::make('view_output')
+            ->recordActions([
+                Action::make('view_output')
                     ->label('Log Output')
                     ->icon(Heroicon::OutlinedDocumentText)
                     ->modalHeading(fn (DeploymentRecord $record) => "Execution Output - Deployment #{$record->id} ({$record->action})")

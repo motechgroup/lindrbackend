@@ -31,7 +31,7 @@ class DeploymentRecordResource extends Resource
                 TextColumn::make('id')->sortable(),
                 TextColumn::make('action')->label('Action')->badge()->sortable(),
                 TextColumn::make('status')->badge()->sortable(),
-                TextColumn::make('initiator.name')->label('Initiator')->default('System/CLI')->sortable(),
+                TextColumn::make('initiator.name')->label('Initiator')->default('System/CLI'),
                 TextColumn::make('branch_version')->label('Branch/Version')->sortable(),
                 TextColumn::make('ip_address')->label('IP')->searchable(),
                 TextColumn::make('started_at')->dateTime()->sortable(),
@@ -88,11 +88,15 @@ class DeploymentRecordResource extends Resource
                     ->modalHeading('Latest Repository Commits')
                     ->modalDescription('Recent commit history from local git log or GitHub REST API.')
                     ->modalContent(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $commits = $service->getRecentCommits(10);
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $commits = $service->getRecentCommits(10);
 
-                        return view('filament.deployment.commits', ['commits' => $commits]);
+                            return view('filament.deployment.commits', ['commits' => $commits]);
+                        } catch (\Throwable $e) {
+                            return view('filament.deployment.diff', ['diff' => 'Unable to load commit history: '.$e->getMessage()]);
+                        }
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
@@ -103,11 +107,15 @@ class DeploymentRecordResource extends Resource
                     ->modalHeading('Git Changes Preview (Diff)')
                     ->modalDescription('Incoming repository changes preview.')
                     ->modalContent(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $diff = $service->getCommitDiff();
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $diff = $service->getCommitDiff();
 
-                        return view('filament.deployment.diff', ['diff' => $diff]);
+                            return view('filament.deployment.diff', ['diff' => $diff]);
+                        } catch (\Throwable $e) {
+                            return view('filament.deployment.diff', ['diff' => 'Unable to load git diff: '.$e->getMessage()]);
+                        }
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
@@ -217,7 +225,13 @@ class DeploymentRecordResource extends Resource
                     ->icon(Heroicon::OutlinedDocumentText)
                     ->modalHeading(fn (DeploymentRecord $record) => "Execution Output - Deployment #{$record->id} ({$record->action})")
                     ->modalDescription('Execution output log details.')
-                    ->modalContent(fn (DeploymentRecord $record) => view('filament.deployment.output', ['record' => $record]))
+                    ->modalContent(function (DeploymentRecord $record) {
+                        try {
+                            return view('filament.deployment.output', ['record' => $record]);
+                        } catch (\Throwable $e) {
+                            return view('filament.deployment.diff', ['diff' => 'Log output error: '.$e->getMessage()]);
+                        }
+                    })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
             ]);

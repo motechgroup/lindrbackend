@@ -28,7 +28,7 @@ class PresenceService
 
         $inActiveCall = ! empty($activeCall);
 
-        $newStatus = $inActiveCall ? 'busy' : ($profile->online_status === 'offline' ? 'available' : $profile->online_status ?? 'available');
+        $newStatus = $inActiveCall ? 'busy' : ($profile->online_status === 'offline' ? 'offline' : ($profile->online_status === 'away' ? 'away' : 'available'));
 
         $profile->update([
             'last_heartbeat_at' => now(),
@@ -103,12 +103,17 @@ class PresenceService
             ->whereIn('status', ['initiated', 'active', CallSession::STATUS_RINGING, CallSession::STATUS_CONNECTED])
             ->exists();
 
-        if ($inActiveCall || in_array($profile->online_status, ['busy', 'in_call'])) {
+        if ($inActiveCall) {
             return [
                 'status' => 'in_call',
                 'is_available' => false,
                 'last_seen_at' => $profile->last_heartbeat_at?->toIso8601String(),
             ];
+        }
+
+        // Self-heal stale busy status if no active call session exists
+        if (in_array($profile->online_status, ['busy', 'in_call'])) {
+            $profile->update(['online_status' => 'available']);
         }
 
         // 4. Away status

@@ -116,6 +116,8 @@ class DatabaseSeeder extends Seeder
                 'role' => UserRole::Female,
                 'status' => UserStatus::Active,
                 'email_verified_at' => now(),
+                'is_creator' => true,
+                'creator_status' => 'approved',
             ]
         );
         Wallet::updateOrCreate(['user_id' => $female->id], ['coin_balance' => 0]);

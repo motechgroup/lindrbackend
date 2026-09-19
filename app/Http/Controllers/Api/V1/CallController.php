@@ -140,9 +140,12 @@ class CallController extends Controller
     {
         $user = $request->user();
 
-        // Reconcile stale ringing calls for user
-        $staleRinging = CallSession::where('receiver_id', $user->id)
-            ->where('status', CallSession::STATUS_RINGING)
+        // Reconcile stale ringing calls for user as caller or receiver
+        $staleRinging = CallSession::where(function ($q) use ($user) {
+            $q->where('caller_id', $user->id)
+                ->orWhere('receiver_id', $user->id);
+        })
+            ->whereIn('status', [CallSession::STATUS_RINGING, 'initiated'])
             ->where('created_at', '<', now()->subSeconds(30))
             ->get();
 

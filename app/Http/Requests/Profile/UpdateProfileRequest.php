@@ -4,6 +4,7 @@ namespace App\Http\Requests\Profile;
 
 use App\Models\PlatformSetting;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends FormRequest
 {
@@ -20,7 +21,9 @@ class UpdateProfileRequest extends FormRequest
         $maxInterests = (int) PlatformSetting::get('max_user_interests', 10);
 
         return [
-            'display_name' => ['nullable', 'string', 'max:255'],
+            'name' => ['nullable', 'string', 'min:3', 'max:50', Rule::unique('users', 'name')->ignore($this->user()?->id)],
+            'username' => ['nullable', 'string', 'min:3', 'max:50', Rule::unique('users', 'name')->ignore($this->user()?->id)],
+            'display_name' => ['nullable', 'string', 'min:2', 'max:100'],
             'date_of_birth' => ['nullable', 'date', 'before:-18 years'],
             'bio' => ['nullable', 'string', 'max:1000'],
             'city' => ['nullable', 'string', 'max:100'],

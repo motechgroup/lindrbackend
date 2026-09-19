@@ -27,13 +27,19 @@ class PhotoService
 
         $nextOrder = (UserPhoto::where('user_id', $user->id)->max('display_order') ?? 0) + 1;
 
-        return UserPhoto::create([
+        $photo = UserPhoto::create([
             'user_id' => $user->id,
             'photo_path' => $path,
             'is_primary' => $isPrimary,
             'display_order' => $nextOrder,
             'is_active' => true,
         ]);
+
+        if ($isPrimary) {
+            $user->update(['avatar' => Storage::url($path)]);
+        }
+
+        return $photo;
     }
 
     /**
@@ -73,6 +79,7 @@ class PhotoService
 
         UserPhoto::where('user_id', $user->id)->update(['is_primary' => false]);
         $photo->update(['is_primary' => true]);
+        $user->update(['avatar' => Storage::url($photo->photo_path)]);
 
         return $photo;
     }

@@ -24,6 +24,11 @@ class ProfileService
             }
         }
 
+        $newName = $data['name'] ?? $data['username'] ?? null;
+        if (! empty($newName) && strlen(trim($newName)) >= 3) {
+            $user->update(['name' => trim($newName)]);
+        }
+
         $existingProfile = $user->profile;
 
         // Server-controlled fields: preserved if already present on existing profile
@@ -31,12 +36,14 @@ class ProfileService
         $country = $existingProfile?->country ?? ($user->country ?? 'KE');
         $countryCode = $existingProfile?->country_code ?? 'KE';
 
+        $displayName = $data['display_name'] ?? $newName ?? $existingProfile?->display_name ?? $user->name;
+
         $profileData = [
-            'display_name' => $data['display_name'] ?? $existingProfile?->display_name ?? $user->name,
+            'display_name' => $displayName,
             'date_of_birth' => $data['date_of_birth'] ?? $existingProfile?->date_of_birth,
             'gender' => $gender,
-            'bio' => $data['bio'] ?? $existingProfile?->bio,
-            'city' => $data['city'] ?? $existingProfile?->city,
+            'bio' => array_key_exists('bio', $data) ? $data['bio'] : $existingProfile?->bio,
+            'city' => array_key_exists('city', $data) ? $data['city'] : $existingProfile?->city,
             'country' => $country,
             'country_code' => $countryCode,
             'profile_visibility' => $data['profile_visibility'] ?? $existingProfile?->profile_visibility ?? true,

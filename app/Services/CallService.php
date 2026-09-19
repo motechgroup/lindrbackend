@@ -120,7 +120,8 @@ class CallService
             $this->notificationService->notifyIncomingDirectCall($receiver, $caller, $callSession->id);
 
             return [
-                'call_session_id' => $callSession->id,
+                'id' => (string) $callSession->id,
+                'call_session_id' => (string) $callSession->id,
                 'room_name' => $roomName,
                 'rate_per_minute' => $rate,
                 'status' => $callSession->status,
@@ -331,9 +332,7 @@ class CallService
 
             $finalStatus = match ($reason) {
                 'INSUFFICIENT_TOKENS' => CallSession::STATUS_ENDED,
-                'DECLINED' => CallSession::STATUS_CANCELLED,
-                'MISSED' => CallSession::STATUS_CANCELLED,
-                'TIMEOUT_RECONCILED' => CallSession::STATUS_CANCELLED,
+                'CANCELLED', 'DECLINED', 'MISSED', 'TIMEOUT_RECONCILED' => CallSession::STATUS_CANCELLED,
                 default => CallSession::STATUS_ENDED,
             };
 

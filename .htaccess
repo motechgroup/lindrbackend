@@ -1,0 +1,17 @@
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php84” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php84 .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redirect root setup.php directly to public setup.php
+    RewriteRule ^setup\.php$ public/setup.php [L,QSA]
+
+    # Serve public directory assets and routes automatically
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

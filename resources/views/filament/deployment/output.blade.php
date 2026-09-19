@@ -1,0 +1,1 @@
+<pre style="font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap;">{{ $record->output_summary ?: $record->error_summary ?: 'No output recorded.' }}</pre>

@@ -14,7 +14,6 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
-use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class DeploymentRecordResource extends Resource
@@ -93,21 +92,7 @@ class DeploymentRecordResource extends Resource
                         $service = app(DeploymentService::class);
                         $commits = $service->getRecentCommits(10);
 
-                        if (empty($commits)) {
-                            return new HtmlString('<div style="padding: 12px; color: #94a3b8;">No commit history retrieved.</div>');
-                        }
-
-                        $html = '<div style="font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px;">';
-                        foreach ($commits as $c) {
-                            $html .= "<div style='margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 6px;'>";
-                            $html .= "<div><strong style='color: #4ec9b0;'>Commit:</strong> <span style='color: #ce9178;'>{$c['short_hash']}</span> ({$c['full_hash']})</div>";
-                            $html .= "<div><strong style='color: #4ec9b0;'>Author:</strong> {$c['author']} &lt;{$c['email']}&gt; | <em>{$c['date']}</em></div>";
-                            $html .= "<div><strong style='color: #4ec9b0;'>Message:</strong> {$c['message']}</div>";
-                            $html .= '</div>';
-                        }
-                        $html .= '</div>';
-
-                        return new HtmlString($html);
+                        return view('filament.deployment.commits', ['commits' => $commits]);
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
@@ -122,9 +107,7 @@ class DeploymentRecordResource extends Resource
                         $service = app(DeploymentService::class);
                         $diff = $service->getCommitDiff();
 
-                        $html = '<pre style="font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap;">'.e($diff).'</pre>';
-
-                        return new HtmlString($html);
+                        return view('filament.deployment.diff', ['diff' => $diff]);
                     })
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
@@ -234,12 +217,7 @@ class DeploymentRecordResource extends Resource
                     ->icon(Heroicon::OutlinedDocumentText)
                     ->modalHeading(fn (DeploymentRecord $record) => "Execution Output - Deployment #{$record->id} ({$record->action})")
                     ->modalDescription('Execution output log details.')
-                    ->modalContent(function (DeploymentRecord $record) {
-                        $log = $record->output_summary ?: $record->error_summary ?: 'No output recorded.';
-                        $html = '<pre style="font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap;">'.e($log).'</pre>';
-
-                        return new HtmlString($html);
-                    })
+                    ->modalContent(fn (DeploymentRecord $record) => view('filament.deployment.output', ['record' => $record]))
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
             ]);

@@ -7,12 +7,15 @@ use App\Models\DeploymentRecord;
 use App\Services\DeploymentService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class DeploymentRecordResource extends Resource
@@ -80,12 +83,88 @@ class DeploymentRecordResource extends Resource
                                 ->send();
                         }
                     }),
+
+                Action::make('view_commits')
+                    ->label('View Commits & Metadata')
+                    ->color('info')
+                    ->modalHeading('Latest Repository Commits')
+                    ->modalDescription(function () {
+                        /** @var DeploymentService $service */
+                        $service = app(DeploymentService::class);
+                        $commits = $service->getRecentCommits(10);
+
+                        if (empty($commits)) {
+                            return 'No commit history retrieved.';
+                        }
+
+                        $html = '<div style="font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px;">';
+                        foreach ($commits as $c) {
+                            $html .= "<div style='margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 6px;'>";
+                            $html .= "<div><strong style='color: #4ec9b0;'>Commit:</strong> <span style='color: #ce9178;'>{$c['short_hash']}</span> ({$c['full_hash']})</div>";
+                            $html .= "<div><strong style='color: #4ec9b0;'>Author:</strong> {$c['author']} &lt;{$c['email']}&gt; | <em>{$c['date']}</em></div>";
+                            $html .= "<div><strong style='color: #4ec9b0;'>Message:</strong> {$c['message']}</div>";
+                            $html .= '</div>';
+                        }
+                        $html .= '</div>';
+
+                        return new HtmlString($html);
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close'),
+
+                Action::make('inspect_diff')
+                    ->label('Inspect Changes (Diff)')
+                    ->color('warning')
+                    ->modalHeading('Git Changes Preview (Diff)')
+                    ->modalDescription(function () {
+                        /** @var DeploymentService $service */
+                        $service = app(DeploymentService::class);
+                        $diff = $service->getCommitDiff();
+
+                        $html = '<pre style="font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap;">'.e($diff).'</pre>';
+
+                        return new HtmlString($html);
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close'),
+
+                Action::make('rollback_code')
+                    ->label('Rollback Site')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Rollback Site Code to Commit')
+                    ->modalDescription('Specify the commit hash to hard reset the site code to. This will reset codebase state and rebuild production caches.')
+                    ->form([
+                        TextInput::make('commit_hash')
+                            ->label('Commit Hash / SHA')
+                            ->placeholder('e.g. 7f8a9b0 or full SHA')
+                            ->required(),
+                    ])
+                    ->action(function (array $data) {
+                        /** @var DeploymentService $service */
+                        $service = app(DeploymentService::class);
+                        try {
+                            $record = $service->rollbackToCommit($data['commit_hash'], auth()->user(), request()->ip());
+                            Notification::make()
+                                ->success()
+                                ->title('Rollback Executed')
+                                ->body("Site rolled back to commit {$data['commit_hash']}. Record #{$record->id}.")
+                                ->send();
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Rollback Failed')
+                                ->body($e->getMessage())
+                                ->send();
+                        }
+                    }),
+
                 Action::make('git_pull')
-                    ->label('Git Pull Repository')
-                    ->color('secondary')
+                    ->label('Git Pull Only')
+                    ->color('gray')
                     ->requiresConfirmation()
                     ->modalHeading('Pull Code from GitHub')
-                    ->modalDescription('Pulls the latest commits from https://github.com/motechgroup/lindrbackend.git without clearing cache or running migrations.')
+                    ->modalDescription('Pulls latest commits from https://github.com/motechgroup/lindrbackend.git without clearing cache or running migrations.')
                     ->action(function () {
                         /** @var DeploymentService $service */
                         $service = app(DeploymentService::class);
@@ -104,6 +183,7 @@ class DeploymentRecordResource extends Resource
                                 ->send();
                         }
                     }),
+
                 Action::make('run_migrations')
                     ->label('Run Migrations')
                     ->color('warning')
@@ -118,6 +198,7 @@ class DeploymentRecordResource extends Resource
                             Notification::make()->danger()->title('Migration Error')->body($e->getMessage())->send();
                         }
                     }),
+
                 Action::make('clear_cache')
                     ->label('Rebuild Cache')
                     ->color('gray')
@@ -131,19 +212,7 @@ class DeploymentRecordResource extends Resource
                             Notification::make()->danger()->title('Cache Error')->body($e->getMessage())->send();
                         }
                     }),
-                Action::make('restart_workers')
-                    ->label('Restart Queue Workers')
-                    ->color('info')
-                    ->action(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        try {
-                            $service->executeAction('restart_workers', auth()->user());
-                            Notification::make()->success()->title('Queue Workers Signaled')->send();
-                        } catch (\Exception $e) {
-                            Notification::make()->danger()->title('Worker Error')->body($e->getMessage())->send();
-                        }
-                    }),
+
                 Action::make('health_check')
                     ->label('Run Health Check')
                     ->color('success')
@@ -157,6 +226,20 @@ class DeploymentRecordResource extends Resource
                             Notification::make()->danger()->title('Health Check Error')->body($e->getMessage())->send();
                         }
                     }),
+            ])
+            ->actions([
+                TableAction::make('view_output')
+                    ->label('Log Output')
+                    ->icon(Heroicon::OutlinedDocumentText)
+                    ->modalHeading(fn (DeploymentRecord $record) => "Execution Output - Deployment #{$record->id} ({$record->action})")
+                    ->modalDescription(function (DeploymentRecord $record) {
+                        $log = $record->output_summary ?: $record->error_summary ?: 'No output recorded.';
+                        $html = '<pre style="font-family: monospace; font-size: 0.8rem; max-height: 400px; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 8px; white-space: pre-wrap;">'.e($log).'</pre>';
+
+                        return new HtmlString($html);
+                    })
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close'),
             ]);
     }
 

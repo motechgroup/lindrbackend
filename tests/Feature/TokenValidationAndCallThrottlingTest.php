@@ -128,7 +128,15 @@ class TokenValidationAndCallThrottlingTest extends TestCase
             ->assertJsonPath('data.call_session.caller_id', $maleUser->id)
             ->assertJsonPath('data.call_session.receiver_id', $femaleUser->id);
 
-        $this->assertNotNull($callRes->json('data.livekit_token'));
+        $sessionId = $callRes->json('data.call_session_id');
+
+        // Accept call as receiver to establish connection and receive LiveKit token
+        $acceptRes = $this->actingAs($femaleUser, 'sanctum')->postJson("/api/v1/calls/{$sessionId}/accept");
+        $acceptRes->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.status', 'CONNECTED');
+
+        $this->assertNotNull($acceptRes->json('data.livekit_token'));
     }
 
     public function test_same_gender_call_remains_rejected(): void

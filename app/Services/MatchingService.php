@@ -142,7 +142,7 @@ class MatchingService
                 'matched_at' => now(),
             ]);
 
-            // Create CallSession record
+            // Create CallSession record in RINGING status
             $roomName = 'lindr_room_'.Str::uuid();
             $callSession = CallSession::create([
                 'id' => (string) Str::uuid(),
@@ -151,28 +151,24 @@ class MatchingService
                 'call_type' => 'video',
                 'room_name' => $roomName,
                 'rate_per_minute' => 20,
-                'status' => 'initiated',
+                'status' => CallSession::STATUS_RINGING,
                 'started_at' => now(),
                 'coins_charged' => $cost,
             ]);
 
-            // Send INCOMING_MATCH & MATCH_ACCEPTED notifications
+            // Send INCOMING_MATCH notification to candidate user (requires receiver acceptance)
             $this->notificationService->notifyIncomingMatch($candidateUser, $user);
-            $this->notificationService->notifyMatchAccepted($user, $candidateUser, $callSession->id);
-
-            $livekitService = app(LiveKitService::class);
-            $livekitData = $livekitService->generateJoinToken($user, $roomName);
 
             $walletTx->update(['reference_id' => (string) $matchRecord->id]);
 
             return [
                 'success' => true,
                 'code' => 'MATCH_FOUND',
-                'message' => 'Match found successfully!',
+                'message' => 'Match request sent! Waiting for receiver...',
                 'match' => $matchRecord->fresh(['userLow.profile', 'userLow.photos', 'userHigh.profile', 'userHigh.photos']),
                 'target_user' => $candidateUser->fresh(['profile', 'photos']),
                 'call_session' => $callSession,
-                'livekit' => $livekitData,
+                'livekit' => null,
             ];
         });
     }

@@ -119,18 +119,15 @@ class CallService
             // Send INCOMING_DIRECT_CALL notification to receiver (does NOT auto-accept)
             $this->notificationService->notifyIncomingDirectCall($receiver, $caller, $callSession->id);
 
-            // Generate short-lived LiveKit token for caller
-            $livekitData = $this->liveKitService->generateJoinToken($caller, $roomName);
-
             return [
                 'call_session_id' => $callSession->id,
                 'room_name' => $roomName,
                 'rate_per_minute' => $rate,
                 'status' => $callSession->status,
-                'livekit_url' => $livekitData['ws_url'],
-                'livekit_token' => $livekitData['token'],
+                'livekit_url' => null,
+                'livekit_token' => null,
                 'call_session' => $callSession->fresh(['caller', 'receiver']),
-                'livekit' => $livekitData,
+                'livekit' => null,
             ];
         });
     }
@@ -162,6 +159,11 @@ class CallService
                     'status' => CallSession::STATUS_CONNECTED,
                     'connected_at' => now(),
                 ]);
+
+                $caller = $callSession->caller;
+                if ($caller && $caller->id !== $recipient->id) {
+                    $this->notificationService->notifyMatchAccepted($caller, $recipient, $callSession->id);
+                }
             }
 
             // Execute 1st minute billable interval upon connection

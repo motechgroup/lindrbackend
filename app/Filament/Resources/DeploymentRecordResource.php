@@ -14,6 +14,9 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 use UnitEnum;
 
 class DeploymentRecordResource extends Resource
@@ -73,7 +76,7 @@ class DeploymentRecordResource extends Resource
                                 ->title('Deployment Completed')
                                 ->body("Deployment #{$record->id} finished successfully.")
                                 ->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             Notification::make()
                                 ->danger()
                                 ->title('Deployment Failed')
@@ -142,7 +145,7 @@ class DeploymentRecordResource extends Resource
                                 ->title('Rollback Executed')
                                 ->body("Site rolled back to commit {$data['commit_hash']}. Record #{$record->id}.")
                                 ->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             Notification::make()
                                 ->danger()
                                 ->title('Rollback Failed')
@@ -167,7 +170,7 @@ class DeploymentRecordResource extends Resource
                                 ->title('Git Pull Completed')
                                 ->body($record->output_summary)
                                 ->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             Notification::make()
                                 ->danger()
                                 ->title('Git Pull Failed')
@@ -186,7 +189,7 @@ class DeploymentRecordResource extends Resource
                         try {
                             $record = $service->executeAction('run_migrations', auth()->user());
                             Notification::make()->success()->title('Migrations Executed')->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             Notification::make()->danger()->title('Migration Error')->body($e->getMessage())->send();
                         }
                     }),
@@ -200,7 +203,7 @@ class DeploymentRecordResource extends Resource
                         try {
                             $service->executeAction('clear_cache', auth()->user());
                             Notification::make()->success()->title('Cache Rebuilt')->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             Notification::make()->danger()->title('Cache Error')->body($e->getMessage())->send();
                         }
                     }),
@@ -214,7 +217,7 @@ class DeploymentRecordResource extends Resource
                         try {
                             $record = $service->executeAction('health_check', auth()->user());
                             Notification::make()->success()->title('Health Check Completed')->body($record->output_summary)->send();
-                        } catch (\Exception $e) {
+                        } catch (\Throwable $e) {
                             Notification::make()->danger()->title('Health Check Error')->body($e->getMessage())->send();
                         }
                     }),
@@ -235,6 +238,19 @@ class DeploymentRecordResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Close'),
             ]);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        if (! Schema::hasTable('deployment_records')) {
+            try {
+                Artisan::call('migrate', ['--force' => true]);
+            } catch (\Throwable $e) {
+                // Prevent crash if database migration is pending
+            }
+        }
+
+        return parent::getEloquentQuery();
     }
 
     public static function getPages(): array

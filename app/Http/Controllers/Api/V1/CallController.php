@@ -163,10 +163,12 @@ class CallController extends Controller
             return $this->successResponse(null, 'No pending incoming calls.');
         }
 
+        $callerName = $pendingCall->caller?->profile?->display_name ?? $pendingCall->caller?->name ?? 'User';
+
         return $this->successResponse([
             'id' => (string) $pendingCall->id,
             'caller_id' => $pendingCall->caller_id,
-            'caller_name' => $pendingCall->caller?->name ?? 'User',
+            'caller_name' => $callerName,
             'caller_avatar' => $pendingCall->caller?->avatar ?? ($pendingCall->caller?->photos[0]->photo_url ?? null),
             'call_type' => $pendingCall->call_type,
             'created_at' => $pendingCall->created_at?->toIso8601String(),

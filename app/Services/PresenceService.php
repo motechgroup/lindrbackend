@@ -44,7 +44,7 @@ class PresenceService
                 'receiver_id' => $activeCall->receiver_id,
                 'room_name' => $activeCall->room_name,
                 'status' => $activeCall->status,
-                'caller_name' => $caller?->name ?? 'Lindr Member',
+                'caller_name' => $caller?->profile?->display_name ?? $caller?->name ?? 'Lindr Member',
                 'livekit_url' => config('livekit.url', 'wss://livekit.lindr.app'),
             ];
         }

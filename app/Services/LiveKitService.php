@@ -21,10 +21,11 @@ class LiveKitService
         ];
 
         $now = time();
+        $displayName = $user->profile?->display_name ?? $user->name;
         $payload = [
             'iss' => $apiKey,
             'sub' => (string) $user->id,
-            'name' => $user->name,
+            'name' => $displayName,
             'nbf' => $now - 5,
             'exp' => $now + 3600, // 1 hour token
             'video' => [

@@ -42,22 +42,32 @@ class LivenessController extends Controller
     {
         $validated = $request->validate([
             'challenge_id' => 'required|string',
-            'selfie_image' => 'required|image|max:10240', // Max 10MB
+            'selfie_image' => 'nullable|file|max:51200', // Max 50MB (image or video)
+            'video' => 'nullable|file|max:51200',
+            'liveness_video' => 'nullable|file|max:51200',
             'gestures_completed' => 'nullable|array',
             'gestures_completed.*' => 'string',
         ]);
 
         $user = $request->user();
 
-        // Store private selfie verification image
-        $path = $request->file('selfie_image')->store('liveness_verifications', 'private');
+        $file = $request->file('video') ?? $request->file('liveness_video') ?? $request->file('selfie_image');
+        if (! $file) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Liveness verification video or image evidence is required.',
+            ], 422);
+        }
+
+        // Store private liveness verification evidence
+        $path = $file->store('liveness_verifications', 'private');
 
         $verification = LivenessVerification::create([
             'user_id' => $user->id,
             'challenge_id' => $validated['challenge_id'],
-            'challenge_sequence' => $validated['gestures_completed'] ?? ['turn_head_left', 'smile'],
+            'challenge_sequence' => $validated['gestures_completed'] ?? ['turn_head_left', 'turn_head_right', 'nod_head', 'open_mouth', 'blink'],
             'selfie_path' => $path,
-            'gestures_completed' => $validated['gestures_completed'] ?? [],
+            'gestures_completed' => $validated['gestures_completed'] ?? ['turn_head_left', 'turn_head_right', 'nod_head', 'open_mouth', 'blink'],
             'status' => 'pending',
             'submitted_at' => now(),
         ]);

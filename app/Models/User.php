@@ -136,6 +136,16 @@ class User extends Authenticatable implements FilamentUser
         return $this->is_creator && in_array($this->creator_status, ['approved', 'verified']);
     }
 
+    public function getUsernameAttribute(): string
+    {
+        return $this->profile?->display_name ?? $this->name;
+    }
+
+    public function getLindrUsername(): string
+    {
+        return $this->profile?->display_name ?? $this->name;
+    }
+
     public function hasActivePayoutHold(): bool
     {
         return $this->payout_hold_until && $this->payout_hold_until->isFuture();

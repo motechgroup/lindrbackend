@@ -72,14 +72,14 @@ class CallService
                 ->exists();
 
             if ($receiverInActiveCall || $receiverProfile->online_status === 'busy') {
-                $receiverName = explode(' ', $receiver->name)[0];
+                $receiverName = $receiverProfile->display_name ?? $receiver->name;
                 throw new CallBusyException("{$receiverName} is currently on another call.");
             }
 
             // Check recipient presence (must be active with recent heartbeat)
             $receiverPresence = $this->presenceService->getUserPresence($receiver);
             if ($receiverPresence['status'] === 'offline') {
-                $receiverName = explode(' ', $receiver->name)[0];
+                $receiverName = $receiverProfile->display_name ?? $receiver->name;
                 throw new CallUnavailableException("{$receiverName} is currently offline.");
             }
 
@@ -251,12 +251,13 @@ class CallService
                 $creatorSharePct = $split['creator_share_pct'];
 
                 if ($creatorCredits > 0) {
+                    $callerName = $caller->profile?->display_name ?? $caller->name;
                     $this->creditLedgerService->creditCreator(
                         $receiver,
                         $creatorCredits,
                         'call',
                         $idempotencyKey,
-                        "Video call earnings minute {$minuteNumber} from {$caller->name}",
+                        "Video call earnings minute {$minuteNumber} from {$callerName}",
                         [
                             'caller_id' => $caller->id,
                             'call_session_id' => $callSession->id,
@@ -266,7 +267,7 @@ class CallService
                         ]
                     );
 
-                    $this->notificationService->notifyCallEarning($receiver, $creatorCredits, $caller->name);
+                    $this->notificationService->notifyCallEarning($receiver, $creatorCredits, $callerName);
                 }
             }
 

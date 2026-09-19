@@ -14,6 +14,6 @@ class AdminAuthenticate extends FilamentAuthenticate
      */
     protected function redirectTo($request): ?string
     {
-        return route('access');
+        return url('/access');
     }
 }

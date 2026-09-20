@@ -25,40 +25,49 @@ class MpesaPaymentProvider implements PaymentProviderInterface
 
     protected function getConfiguration(): array
     {
+        $config = config('services.mpesa', []);
         $provider = PaymentProvider::where('code', 'mpesa')->first();
         if ($provider && ! empty($provider->configuration)) {
-            return $provider->configuration;
+            $dbConfig = array_filter($provider->configuration, fn ($v) => ! is_null($v) && $v !== '');
+            $config = array_merge($config, $dbConfig);
         }
 
+        $appUrl = env('APP_URL', 'http://localhost:8000');
+
         return [
-            'consumer_key' => config('services.mpesa.consumer_key', env('MPESA_CONSUMER_KEY')),
-            'consumer_secret' => config('services.mpesa.consumer_secret', env('MPESA_CONSUMER_SECRET')),
-            'shortcode' => config('services.mpesa.shortcode', env('MPESA_SHORTCODE', '174379')),
-            'passkey' => config('services.mpesa.passkey', env('MPESA_PASSKEY')),
-            'environment' => env('MPESA_ENVIRONMENT', 'sandbox'),
-            'callback_url' => config('services.mpesa.callback_url', env('MPESA_CALLBACK_URL', route('webhooks.mpesa'))),
+            'consumer_key' => $config['consumer_key'] ?? null,
+            'consumer_secret' => $config['consumer_secret'] ?? null,
+            'shortcode' => $config['shortcode'] ?? '174379',
+            'passkey' => $config['passkey'] ?? null,
+            'environment' => $config['environment'] ?? 'sandbox',
+            'callback_url' => $config['callback_url'] ?? (rtrim($appUrl, '/').'/api/v1/webhooks/mpesa'),
         ];
     }
 
     public function initiatePayment(PaymentTransaction $transaction, array $params = []): PaymentInitiationResult
     {
         $config = $this->getConfiguration();
-        $consumerKey = $config['consumer_key'] ?? null;
-        $consumerSecret = $config['consumer_secret'] ?? null;
-        $shortCode = $config['shortcode'] ?? '174379';
-        $passKey = $config['passkey'] ?? null;
+        $consumerKey = trim($config['consumer_key'] ?? '');
+        $consumerSecret = trim($config['consumer_secret'] ?? '');
+        $shortCode = trim($config['shortcode'] ?? '174379');
+        $passKey = trim($config['passkey'] ?? '');
         $phoneNumber = $params['phone_number'] ?? $transaction->user->phone_number ?? '';
 
         $formattedPhone = $this->formatPhoneNumber($phoneNumber);
 
-        if ($consumerKey && $consumerSecret && $passKey && ! str_contains($consumerKey, 'mock')) {
+        if (! empty($consumerKey) && ! empty($consumerSecret) && ! empty($passKey) && ! str_contains($consumerKey, 'mock')) {
             try {
                 $env = $config['environment'] ?? 'sandbox';
                 $baseUrl = $env === 'production'
                     ? 'https://api.safaricom.co.ke'
                     : 'https://sandbox.safaricom.co.ke';
 
-                $authResponse = Http::withBasicAuth($consumerKey, $consumerSecret)
+                $http = Http::timeout(10);
+                if ($env !== 'production') {
+                    $http = $http->withoutVerifying();
+                }
+
+                $authResponse = $http->withBasicAuth($consumerKey, $consumerSecret)
                     ->get("{$baseUrl}/oauth/v1/generate?grant_type=client_credentials");
 
                 if ($authResponse->successful()) {
@@ -66,7 +75,12 @@ class MpesaPaymentProvider implements PaymentProviderInterface
                     $timestamp = date('YmdHis');
                     $password = base64_encode($shortCode.$passKey.$timestamp);
 
-                    $stkResponse = Http::withToken($token)
+                    $stkHttp = Http::timeout(15);
+                    if ($env !== 'production') {
+                        $stkHttp = $stkHttp->withoutVerifying();
+                    }
+
+                    $stkResponse = $stkHttp->withToken($token)
                         ->post("{$baseUrl}/mpesa/stkpush/v1/processrequest", [
                             'BusinessShortCode' => $shortCode,
                             'Password' => $password,
@@ -76,7 +90,7 @@ class MpesaPaymentProvider implements PaymentProviderInterface
                             'PartyA' => $formattedPhone,
                             'PartyB' => $shortCode,
                             'PhoneNumber' => $formattedPhone,
-                            'CallBackURL' => $config['callback_url'] ?? route('webhooks.mpesa'),
+                            'CallBackURL' => $config['callback_url'],
                             'AccountReference' => 'LindrCoins',
                             'TransactionDesc' => "Coin Package #{$transaction->package_id}",
                         ]);
@@ -97,9 +111,19 @@ class MpesaPaymentProvider implements PaymentProviderInterface
                             rawResponse: $stkResponse->json()
                         );
                     }
+
+                    Log::error('M-Pesa STK Push rejected by Safaricom Daraja', [
+                        'status' => $stkResponse->status(),
+                        'body' => $stkResponse->body(),
+                    ]);
+                } else {
+                    Log::error('M-Pesa OAuth Auth failed', [
+                        'status' => $authResponse->status(),
+                        'body' => $authResponse->body(),
+                    ]);
                 }
             } catch (\Exception $e) {
-                Log::error('M-Pesa STK Push error: '.$e->getMessage());
+                Log::error('M-Pesa STK Push exception: '.$e->getMessage());
             }
         }
 

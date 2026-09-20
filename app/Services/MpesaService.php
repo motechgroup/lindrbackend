@@ -79,7 +79,12 @@ class MpesaService
                 ? 'https://api.safaricom.co.ke'
                 : 'https://sandbox.safaricom.co.ke';
 
-            $response = Http::withBasicAuth($key, $secret)
+            $http = Http::timeout(10);
+            if ($env !== 'production') {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->withBasicAuth($key, $secret)
                 ->get("{$baseUrl}/oauth/v1/generate?grant_type=client_credentials");
 
             if ($response->successful()) {
@@ -152,7 +157,12 @@ class MpesaService
                 'OriginatorConversationID' => (string) $withdrawal->id,
             ];
 
-            $response = Http::withToken($token)
+            $http = Http::timeout(15);
+            if ($env !== 'production') {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->withToken($token)
                 ->post("{$baseUrl}/mpesa/b2c/v1/paymentrequest", $payload);
 
             if ($response->successful()) {

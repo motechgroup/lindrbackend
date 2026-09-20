@@ -124,8 +124,8 @@ Route::middleware(['auth:sanctum', EnsureAccountActive::class, 'throttle:60,1'])
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/{reference}', [PaymentController::class, 'status']);
 
-    // Financial Operations (Tighter Throttle Rate Limit)
-    Route::middleware('throttle:10,1')->group(function () {
+    // Financial Operations (Protected by dedicated payment rate limiter)
+    Route::middleware('throttle:payments')->group(function () {
         Route::post('/payments/initiate', [PaymentController::class, 'initiate']);
         Route::post('/payments/purchase', [PaymentController::class, 'initiate']);
         Route::post('/wallet/topup', [WalletController::class, 'topup']);

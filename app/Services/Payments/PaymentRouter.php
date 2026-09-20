@@ -54,17 +54,17 @@ class PaymentRouter
     /**
      * Detect customer country from trusted signals.
      */
-    public function detectCountry(User $user, ?string $overrideCountry = null): string
+    public function detectCountry(?User $user = null, ?string $overrideCountry = null): string
     {
         if (! empty($overrideCountry) && strlen($overrideCountry) === 2) {
             return strtoupper($overrideCountry);
         }
 
-        if (! empty($user->profile->country)) {
+        if ($user && ! empty($user->profile->country)) {
             return strtoupper($user->profile->country);
         }
 
-        $phoneNumber = $user->phone ?? $user->phone_number ?? null;
+        $phoneNumber = $user?->phone ?? $user?->phone_number ?? null;
         if (! empty($phoneNumber)) {
             $phone = preg_replace('/[^0-9]/', '', $phoneNumber);
             if (str_starts_with($phone, '254')) {
@@ -108,7 +108,7 @@ class PaymentRouter
      *
      * @return Collection<int, PaymentMethod>
      */
-    public function getAvailableMethods(User $user, ?string $countryOverride = null, ?string $currencyOverride = null): Collection
+    public function getAvailableMethods(?User $user = null, ?string $countryOverride = null, ?string $currencyOverride = null): Collection
     {
         $country = $this->detectCountry($user, $countryOverride);
         $currency = $this->resolveCurrency($country, $currencyOverride);

@@ -39,6 +39,7 @@ Route::get('/health', HealthController::class);
 // Public Webhook & Callback Routes
 Route::get('/coin-packages', [CoinPackageController::class, 'index']);
 Route::get('/token-packages', [CoinPackageController::class, 'index']);
+Route::get('/payments/methods', [PaymentController::class, 'methods']);
 Route::post('/payments/mpesa/callback', [WebhookController::class, 'handleMpesa']);
 
 Route::prefix('webhooks')->group(function () {
@@ -120,7 +121,6 @@ Route::middleware(['auth:sanctum', EnsureAccountActive::class, 'throttle:60,1'])
     Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
 
     // Payments API
-    Route::get('/payments/methods', [PaymentController::class, 'methods']);
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/{reference}', [PaymentController::class, 'status']);
 

@@ -362,16 +362,17 @@ class DeploymentService
 
     protected function runClearCache(): string
     {
+        Artisan::call('optimize:clear');
         Artisan::call('config:clear');
         Artisan::call('cache:clear');
         Artisan::call('route:clear');
         Artisan::call('view:clear');
 
-        Artisan::call('config:cache');
-        Artisan::call('route:cache');
-        Artisan::call('view:cache');
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
 
-        return 'Caches cleared and rebuilt successfully.';
+        return 'Caches (compiled views, routes, configs, and OPcache) cleared and purged successfully.';
     }
 
     protected function runRestartWorkers(): string

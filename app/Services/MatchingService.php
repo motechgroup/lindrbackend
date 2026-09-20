@@ -29,7 +29,7 @@ class MatchingService
      */
     public function startMatchBroadcast(User $initiator, ?int $tokenCost = null): array
     {
-        $cost = $tokenCost ?? (int) PlatformSetting::get('matching_token_cost', 50);
+        $cost = $tokenCost ?? (int) PlatformSetting::get('matching_token_cost', PlatformSetting::get('match_coins', 50));
 
         // Pre-check initiator token balance
         $wallet = $this->walletService->getWallet($initiator);

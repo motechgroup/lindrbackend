@@ -19,6 +19,7 @@ use App\Services\GiftService;
 use App\Services\MonetizationService;
 use App\Services\MpesaService;
 use App\Services\PaidMessagingService;
+use App\Services\WalletService;
 use App\Services\WithdrawalService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -522,5 +523,32 @@ class CreatorMonetizationAndWithdrawalHardeningTest extends TestCase
 
         $this->assertEquals(85, $giftSplit['creator_amount']);
         $this->assertEquals(85.0, $giftSplit['creator_share_pct']);
+    }
+
+    public function test_23_admin_configured_chat_coins_and_match_coins_are_dynamically_enforced(): void
+    {
+        $sender = $this->createNormalUser('male');
+        $creator = $this->createVerifiedCreator('female');
+
+        // Admin updates Chat Coins to 15 and Match Coins to 100
+        PlatformSetting::set('message_cost', 15);
+        PlatformSetting::set('chat_coins', 15);
+        PlatformSetting::set('matching_token_cost', 100);
+        PlatformSetting::set('match_coins', 100);
+
+        /** @var PaidMessagingService $paidMessaging */
+        $paidMessaging = app(PaidMessagingService::class);
+        $conversation = app(ChatService::class)->getOrCreateConversation($sender, $creator);
+
+        $msg = $paidMessaging->sendPaidMessage($sender, $conversation, 'Testing updated chat coins');
+
+        $this->assertTrue((bool) $msg->is_paid);
+        $this->assertEquals(985, $sender->fresh()->wallet->coin_balance); // 1000 - 15 = 985
+
+        /** @var WalletService $walletService */
+        $walletSummary = app(WalletService::class)->getWalletSummary($sender);
+
+        $this->assertEquals(15, $walletSummary['rates']['chat_coins']);
+        $this->assertEquals(100, $walletSummary['rates']['match_coins']);
     }
 }

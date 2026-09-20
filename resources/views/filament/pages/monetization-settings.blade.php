@@ -80,10 +80,16 @@
                     <p class="text-xs text-gray-400 mt-1">Default: 60.0% of paid chat message tokens awarded to male creators.</p>
                 </div>
 
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Paid Message Cost (Tokens / Message)</label>
-                    <input type="number" min="1" wire:model="message_cost" class="w-full md:w-1/2 rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-emerald-500 focus:border-emerald-500" />
-                    <p class="text-xs text-gray-400 mt-1">Tokens debited per message sent to a verified creator (Default: 5 tokens).</p>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">💬 Chat Coins (Tokens / Paid Message)</label>
+                    <input type="number" min="1" wire:model="message_cost" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-emerald-500 focus:border-emerald-500" />
+                    <p class="text-xs text-gray-400 mt-1">Chat coins debited from sender per message sent to a creator (Default: 5 coins).</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">🎯 Match Coins (Tokens / Instant Match)</label>
+                    <input type="number" min="1" wire:model="matching_token_cost" class="w-full rounded-lg border-gray-300 dark:border-gray-600 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-emerald-500 focus:border-emerald-500" />
+                    <p class="text-xs text-gray-400 mt-1">Match coins debited for instant profile match unlock broadcast (Default: 50 coins).</p>
                 </div>
             </div>
         </div>

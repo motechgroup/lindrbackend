@@ -152,6 +152,11 @@ class WalletService
             ->limit(5)
             ->get();
 
+        $chatCoins = (int) PlatformSetting::get('message_cost', PlatformSetting::get('chat_coins', 5));
+        $matchCoins = (int) PlatformSetting::get('matching_token_cost', PlatformSetting::get('match_coins', 50));
+        $videoCallRate = (int) PlatformSetting::get('video_call_rate_per_minute', 30);
+        $audioCallRate = (int) PlatformSetting::get('audio_call_rate_per_minute', 20);
+
         return [
             'id' => $wallet->id,
             'user_id' => $wallet->user_id,
@@ -159,6 +164,14 @@ class WalletService
             'available_balance' => $wallet->coin_balance,
             'coin_balance' => $wallet->coin_balance,
             'currency' => 'TOKENS',
+            'rates' => [
+                'chat_coins' => $chatCoins,
+                'message_cost' => $chatCoins,
+                'match_coins' => $matchCoins,
+                'matching_token_cost' => $matchCoins,
+                'video_call_rate_per_minute' => $videoCallRate,
+                'audio_call_rate_per_minute' => $audioCallRate,
+            ],
             'recent_transactions' => $recent->map(function ($tx) {
                 return [
                     'id' => $tx->id,

@@ -28,7 +28,7 @@ class PaidMessagingService
         string $content,
         string $type = 'text'
     ): Message {
-        $costTokens = (int) PlatformSetting::get('message_cost', 5);
+        $costTokens = (int) PlatformSetting::get('message_cost', PlatformSetting::get('chat_coins', 5));
 
         if (! $conversation->isParticipant($sender->id)) {
             throw new AccessDeniedHttpException('Sender is not a participant in this conversation.');

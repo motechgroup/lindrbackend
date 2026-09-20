@@ -112,7 +112,7 @@ class MonetizationService
      */
     public function calculateMatchingSplit(): array
     {
-        $tokenCost = (int) PlatformSetting::get('matching_token_cost', 50);
+        $tokenCost = (int) PlatformSetting::get('matching_token_cost', PlatformSetting::get('match_coins', 50));
 
         return [
             'gross_tokens' => $tokenCost,

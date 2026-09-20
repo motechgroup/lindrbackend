@@ -65,8 +65,8 @@ class MonetizationSettingsPage extends Page
 
         $this->video_call_rate_per_minute = (int) PlatformSetting::get('video_call_rate_per_minute', 30);
         $this->audio_call_rate_per_minute = (int) PlatformSetting::get('audio_call_rate_per_minute', 20);
-        $this->message_cost = (int) PlatformSetting::get('message_cost', 5);
-        $this->matching_token_cost = (int) PlatformSetting::get('matching_token_cost', 50);
+        $this->message_cost = (int) PlatformSetting::get('message_cost', PlatformSetting::get('chat_coins', 5));
+        $this->matching_token_cost = (int) PlatformSetting::get('matching_token_cost', PlatformSetting::get('match_coins', 50));
 
         $this->credits_per_usd = (float) PlatformSetting::get('credits_per_usd', 10.0);
         $this->minimum_withdrawal_credits = (int) PlatformSetting::get('minimum_withdrawal_credits', 100);
@@ -86,8 +86,14 @@ class MonetizationSettingsPage extends Page
 
         PlatformSetting::set('video_call_rate_per_minute', (string) $this->video_call_rate_per_minute, 'Video call token rate per minute');
         PlatformSetting::set('audio_call_rate_per_minute', (string) $this->audio_call_rate_per_minute, 'Audio call token rate per minute');
+
+        // Chat Coins / Message Cost
         PlatformSetting::set('message_cost', (string) $this->message_cost, 'Token cost per sent chat message to a verified creator');
+        PlatformSetting::set('chat_coins', (string) $this->message_cost, 'Chat coins cost per sent chat message');
+
+        // Match Coins / Instant Match Cost
         PlatformSetting::set('matching_token_cost', (string) $this->matching_token_cost, 'Token cost for instant profile match unlock');
+        PlatformSetting::set('match_coins', (string) $this->matching_token_cost, 'Match coins cost per instant match');
 
         PlatformSetting::set('credits_per_usd', (string) $this->credits_per_usd, 'Creator credits required per $1.00 USD payout value');
         PlatformSetting::set('minimum_withdrawal_credits', (string) $this->minimum_withdrawal_credits, 'Minimum withdrawal threshold in creator credits');

@@ -42,6 +42,7 @@ class InstantMatchTest extends TestCase
         $femaleUser = User::factory()->female()->create();
         UserProfile::factory()->create([
             'user_id' => $femaleUser->id,
+            'gender' => 'female',
             'online_status' => 'available',
         ]);
 

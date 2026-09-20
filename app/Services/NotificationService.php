@@ -261,4 +261,47 @@ class NotificationService
             ['action' => $actionType, 'reason' => $reason]
         );
     }
+
+    public function notifyCreatorVerificationApproved(User $user): void
+    {
+        $this->notifyUser(
+            $user,
+            'CREATOR_VERIFICATION_APPROVED',
+            'Verification Approved! ✅',
+            'Your Lindr creator verification has been approved.',
+            ['status' => 'approved']
+        );
+    }
+
+    public function notifyCreatorVerificationRejected(User $user, ?string $reason = null): void
+    {
+        $body = 'Your verification was not approved.';
+        if ($reason) {
+            $body .= " Reason: {$reason}";
+        }
+
+        $this->notifyUser(
+            $user,
+            'CREATOR_VERIFICATION_REJECTED',
+            'Verification Update ⚠️',
+            $body,
+            ['status' => 'rejected', 'reason' => $reason]
+        );
+    }
+
+    public function notifyCreatorVerificationRevoked(User $user, ?string $reason = null): void
+    {
+        $body = 'Your creator verification status has been changed.';
+        if ($reason) {
+            $body .= " Reason: {$reason}";
+        }
+
+        $this->notifyUser(
+            $user,
+            'CREATOR_VERIFICATION_REVOKED',
+            'Verification Status Changed 🔴',
+            $body,
+            ['status' => 'revoked', 'reason' => $reason]
+        );
+    }
 }

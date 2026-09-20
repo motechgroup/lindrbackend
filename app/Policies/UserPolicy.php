@@ -34,4 +34,12 @@ class UserPolicy
     {
         return $authUser->isAdmin();
     }
+
+    /**
+     * Determine whether the authenticated user can manage creator verification.
+     */
+    public function manageCreatorVerification(User $authUser, ?User $targetUser = null): bool
+    {
+        return $authUser->isAdmin() && $authUser->isActive();
+    }
 }

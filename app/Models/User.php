@@ -255,6 +255,13 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(UserDevice::class)->where('active', true);
     }
 
+    public function adminActionsOnUser(): HasMany
+    {
+        return $this->hasMany(AdminAction::class, 'entity_id')
+            ->where('entity_type', self::class)
+            ->latest();
+    }
+
     public function hasNotificationEnabled(string $category): bool
     {
         // Security and moderation notifications cannot be disabled

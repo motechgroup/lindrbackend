@@ -124,13 +124,11 @@ Route::middleware(['auth:sanctum', EnsureAccountActive::class, 'throttle:60,1'])
     Route::get('/payments', [PaymentController::class, 'index']);
     Route::get('/payments/{reference}', [PaymentController::class, 'status']);
 
-    // Financial Operations (Protected by dedicated payment rate limiter)
-    Route::middleware('throttle:payments')->group(function () {
-        Route::post('/payments/initiate', [PaymentController::class, 'initiate']);
-        Route::post('/payments/purchase', [PaymentController::class, 'initiate']);
-        Route::post('/wallet/topup', [WalletController::class, 'topup']);
-        Route::post('/withdrawals/request', [WithdrawalController::class, 'requestPayout']);
-    });
+    // Financial Operations (Unrestricted for seamless top-ups)
+    Route::post('/payments/initiate', [PaymentController::class, 'initiate']);
+    Route::post('/payments/purchase', [PaymentController::class, 'initiate']);
+    Route::post('/wallet/topup', [WalletController::class, 'topup']);
+    Route::post('/withdrawals/request', [WithdrawalController::class, 'requestPayout']);
 
     Route::post('/gifts/send', [GiftController::class, 'send'])->middleware('throttle:gifts');
 

@@ -56,4 +56,9 @@ return [
         'callback_url' => env('MPESA_CALLBACK_URL'),
     ],
 
+    'flutterwave' => [
+        'public_key' => env('FLW_PUBLIC_KEY'),
+        'secret_key' => env('FLW_SECRET_KEY'),
+        'webhook_secret' => env('FLW_WEBHOOK_SECRET'),
+    ],
 ];

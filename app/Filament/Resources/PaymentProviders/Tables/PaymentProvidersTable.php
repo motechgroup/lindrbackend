@@ -5,8 +5,8 @@ namespace App\Filament\Resources\PaymentProviders\Tables;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
 
 class PaymentProvidersTable
@@ -22,8 +22,8 @@ class PaymentProvidersTable
                 TextColumn::make('code')
                     ->fontFamily('mono')
                     ->searchable(),
-                IconColumn::make('enabled')
-                    ->boolean()
+                ToggleColumn::make('enabled')
+                    ->label('Enabled')
                     ->sortable(),
                 IconColumn::make('test_mode')
                     ->label('Test Mode')

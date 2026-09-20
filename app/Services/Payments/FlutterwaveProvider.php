@@ -58,27 +58,30 @@ class FlutterwaveProvider implements PaymentProviderInterface
         }
 
         try {
-            $response = Http::withToken($secretKey)
-                ->acceptJson()
-                ->post('https://api.flutterwave.com/v3/payments', [
-                    'tx_ref' => $transaction->public_reference,
-                    'amount' => $transaction->amount,
-                    'currency' => $transaction->currency,
-                    'redirect_url' => $params['return_url'] ?? config('app.url'),
-                    'customer' => [
-                        'email' => $transaction->user->email ?? "user_{$transaction->user_id}@lindr.app",
-                        'phonenumber' => $params['phone_number'] ?? $transaction->user->phone_number ?? '0000000000',
-                        'name' => $transaction->user->name ?? 'Lindr User',
-                    ],
-                    'customizations' => [
-                        'title' => 'Lindr Coin Purchase',
-                        'description' => "Purchase of {$transaction->expected_coins} Coins",
-                    ],
-                    'meta' => array_merge($transaction->metadata ?? [], [
-                        'package_id' => $transaction->package_id,
-                        'user_id' => $transaction->user_id,
-                    ]),
-                ]);
+            $http = Http::timeout(15)->withToken($secretKey)->acceptJson();
+            if (config('app.env') !== 'production') {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->post('https://api.flutterwave.com/v3/payments', [
+                'tx_ref' => $transaction->public_reference,
+                'amount' => $transaction->amount,
+                'currency' => $transaction->currency,
+                'redirect_url' => $params['return_url'] ?? config('app.url'),
+                'customer' => [
+                    'email' => $transaction->user->email ?? "user_{$transaction->user_id}@lindr.app",
+                    'phonenumber' => $params['phone_number'] ?? $transaction->user->phone_number ?? '0000000000',
+                    'name' => $transaction->user->name ?? 'Lindr User',
+                ],
+                'customizations' => [
+                    'title' => 'Lindr Coin Purchase',
+                    'description' => "Purchase of {$transaction->expected_coins} Coins",
+                ],
+                'meta' => array_merge($transaction->metadata ?? [], [
+                    'package_id' => $transaction->package_id,
+                    'user_id' => $transaction->user_id,
+                ]),
+            ]);
 
             if ($response->successful() && $response->json('status') === 'success') {
                 $data = $response->json('data');
@@ -88,6 +91,10 @@ class FlutterwaveProvider implements PaymentProviderInterface
                     transactionReference: $transaction->public_reference,
                     providerReference: (string) ($data['id'] ?? $transaction->public_reference),
                     checkoutUrl: $data['link'] ?? null,
+                    actionData: [
+                        'checkout_url' => $data['link'] ?? null,
+                        'flw_ref' => $data['id'] ?? null,
+                    ],
                     message: 'Flutterwave payment link generated.',
                     rawResponse: $response->json()
                 );
@@ -126,9 +133,12 @@ class FlutterwaveProvider implements PaymentProviderInterface
 
         try {
             $transactionId = $transaction->provider_reference ?? $transaction->public_reference;
-            $response = Http::withToken($secretKey)
-                ->acceptJson()
-                ->get("https://api.flutterwave.com/v3/transactions/{$transactionId}/verify");
+            $http = Http::timeout(15)->withToken($secretKey)->acceptJson();
+            if (config('app.env') !== 'production') {
+                $http = $http->withoutVerifying();
+            }
+
+            $response = $http->get("https://api.flutterwave.com/v3/transactions/{$transactionId}/verify");
 
             if ($response->successful() && $response->json('status') === 'success') {
                 $data = $response->json('data');

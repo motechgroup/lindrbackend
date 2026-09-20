@@ -1,0 +1,4 @@
+Consumer:9a7lKfG1x9tNZSxA25lFp9Yl50u23J63
+Secret:GdtbnH128JpL86lY
+Passkey:bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919
+Shortcode:174379

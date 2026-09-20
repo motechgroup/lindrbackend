@@ -55,12 +55,7 @@ class MpesaPaymentProvider implements PaymentProviderInterface
 
         $formattedPhone = $this->formatPhoneNumber($phoneNumber);
 
-        $isMockMode = empty($consumerKey) ||
-                      str_contains(strtolower($consumerKey), 'mock') ||
-                      str_starts_with($consumerKey, '9a7lKf') ||
-                      str_contains(strtolower($consumerKey), 'placeholder');
-
-        if (! $isMockMode && ! empty($consumerSecret) && ! empty($passKey)) {
+        if (! empty($consumerKey) && ! empty($consumerSecret) && ! empty($passKey) && strtolower($consumerKey) !== 'mock') {
             try {
                 $env = $config['environment'] ?? 'sandbox';
                 $baseUrl = $env === 'production'

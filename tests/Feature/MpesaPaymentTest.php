@@ -6,6 +6,7 @@ use App\Models\CoinPackage;
 use App\Models\CoinPurchase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class MpesaPaymentTest extends TestCase
@@ -14,6 +15,16 @@ class MpesaPaymentTest extends TestCase
 
     public function test_user_can_initiate_coin_purchase(): void
     {
+        Http::fake([
+            '*/oauth/v1/generate*' => Http::response(['access_token' => 'mock_token', 'expires_in' => '3599']),
+            '*/mpesa/stkpush/v1/processrequest*' => Http::response([
+                'ResponseCode' => '0',
+                'ResponseDescription' => 'Success',
+                'MerchantRequestID' => 'mr_123',
+                'CheckoutRequestID' => 'ws_CO_123',
+            ]),
+        ]);
+
         $user = User::factory()->create();
         $user->wallet()->create(['coin_balance' => 0]);
         $package = CoinPackage::create([

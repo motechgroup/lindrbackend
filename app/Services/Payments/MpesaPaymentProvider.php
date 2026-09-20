@@ -55,7 +55,7 @@ class MpesaPaymentProvider implements PaymentProviderInterface
 
         $formattedPhone = $this->formatPhoneNumber($phoneNumber);
 
-        if (! empty($consumerKey) && ! empty($consumerSecret) && ! empty($passKey) && ! str_contains($consumerKey, 'mock') && ! str_contains($consumerKey, '9a7lKf')) {
+        if (! empty($consumerKey) && ! empty($consumerSecret) && ! empty($passKey) && ! str_contains(strtolower($consumerKey), 'mock')) {
             try {
                 $env = $config['environment'] ?? 'sandbox';
                 $baseUrl = $env === 'production'
@@ -72,6 +72,9 @@ class MpesaPaymentProvider implements PaymentProviderInterface
 
                 if (! $authResponse->successful()) {
                     $errText = $authResponse->json('errorMessage') ?? $authResponse->json('error_description') ?? $authResponse->body();
+                    if (empty(trim((string) $errText))) {
+                        $errText = "Invalid Consumer Key or Secret (HTTP {$authResponse->status()})";
+                    }
                     Log::error('M-Pesa OAuth Auth failed', ['status' => $authResponse->status(), 'body' => $authResponse->body()]);
 
                     return new PaymentInitiationResult(

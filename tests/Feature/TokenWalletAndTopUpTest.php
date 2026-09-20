@@ -11,6 +11,7 @@ use App\Services\LevelService;
 use App\Services\PaymentService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TokenWalletAndTopUpTest extends TestCase
@@ -63,6 +64,16 @@ class TokenWalletAndTopUpTest extends TestCase
     /** 3. Active package can be purchased */
     public function test_active_package_can_be_purchased(): void
     {
+        Http::fake([
+            '*/oauth/v1/generate*' => Http::response(['access_token' => 'mock_token', 'expires_in' => '3599']),
+            '*/mpesa/stkpush/v1/processrequest*' => Http::response([
+                'ResponseCode' => '0',
+                'ResponseDescription' => 'Success',
+                'MerchantRequestID' => 'mr_123',
+                'CheckoutRequestID' => 'ws_CO_123',
+            ]),
+        ]);
+
         $user = User::factory()->create();
         $package = CoinPackage::create([
             'name' => '250 Tokens',

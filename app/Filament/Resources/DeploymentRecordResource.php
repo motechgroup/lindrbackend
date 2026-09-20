@@ -93,56 +93,76 @@ class DeploymentRecordResource extends Resource
             ->headerActions([
                 Action::make('pending_migrations_status')
                     ->label(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $pending = $service->getPendingMigrations();
-                        $count = count($pending);
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $pending = $service->getPendingMigrations();
+                            $count = count($pending);
 
-                        return $count > 0 ? "⚠️ {$count} Pending Migration(s)" : '✅ DB Up-To-Date (0 Pending)';
+                            return $count > 0 ? "⚠️ {$count} Pending Migration(s)" : '✅ DB Up-To-Date (0 Pending)';
+                        } catch (\Throwable $e) {
+                            return 'DB Migration Status';
+                        }
                     })
                     ->color(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
 
-                        return count($service->getPendingMigrations()) > 0 ? 'warning' : 'success';
+                            return count($service->getPendingMigrations()) > 0 ? 'warning' : 'success';
+                        } catch (\Throwable $e) {
+                            return 'gray';
+                        }
                     })
                     ->icon(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
 
-                        return count($service->getPendingMigrations()) > 0 ? Heroicon::OutlinedExclamationTriangle : Heroicon::OutlinedCheckCircle;
+                            return count($service->getPendingMigrations()) > 0 ? Heroicon::OutlinedExclamationTriangle : Heroicon::OutlinedCheckCircle;
+                        } catch (\Throwable $e) {
+                            return Heroicon::OutlinedCommandLine;
+                        }
                     })
                     ->requiresConfirmation(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
 
-                        return count($service->getPendingMigrations()) > 0;
+                            return count($service->getPendingMigrations()) > 0;
+                        } catch (\Throwable $e) {
+                            return false;
+                        }
                     })
                     ->modalHeading('Pending Database Migrations Status')
                     ->modalDescription(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $pending = $service->getPendingMigrations();
-                        $count = count($pending);
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $pending = $service->getPendingMigrations();
+                            $count = count($pending);
 
-                        if ($count === 0) {
-                            return 'Database schema is fully up-to-date! No pending migrations are waiting to be executed on the live server.';
+                            if ($count === 0) {
+                                return 'Database schema is fully up-to-date! No pending migrations are waiting to be executed on the live server.';
+                            }
+
+                            return "Found {$count} pending migration file(s) that need to be run on the live server:\n\n• ".implode("\n• ", $pending)."\n\nClick 'Run Migrations Now' below to execute them safely.";
+                        } catch (\Throwable $e) {
+                            return 'Unable to fetch pending migrations: '.$e->getMessage();
                         }
-
-                        return "Found {$count} pending migration file(s) that need to be run on the live server:\n\n• ".implode("\n• ", $pending)."\n\nClick 'Run Migrations Now' below to execute them safely.";
                     })
                     ->modalSubmitActionLabel('Run Migrations Now')
                     ->action(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $pending = $service->getPendingMigrations();
-                        if (count($pending) === 0) {
-                            Notification::make()->info()->title('No Pending Migrations')->body('Database is already up-to-date.')->send();
-
-                            return;
-                        }
-
                         try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $pending = $service->getPendingMigrations();
+                            if (count($pending) === 0) {
+                                Notification::make()->info()->title('No Pending Migrations')->body('Database is already up-to-date.')->send();
+
+                                return;
+                            }
+
                             $record = $service->executeAction('run_migrations', auth()->user());
                             Notification::make()
                                 ->success()
@@ -164,17 +184,21 @@ class DeploymentRecordResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Deploy Latest Production Code')
                     ->modalDescription(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $pending = $service->getPendingMigrations();
-                        $pendingStr = count($pending) > 0 ? "\n\n⚠️ Includes ".count($pending).' pending migration(s): '.implode(', ', array_slice($pending, 0, 3)) : '';
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $pending = $service->getPendingMigrations();
+                            $pendingStr = count($pending) > 0 ? "\n\n⚠️ Includes ".count($pending).' pending migration(s): '.implode(', ', array_slice($pending, 0, 3)) : '';
 
-                        return 'This will pull the latest code from https://github.com/motechgroup/lindrbackend.git (branch main), execute pending database migrations, rebuild application caches, and restart background workers safely.'.$pendingStr;
+                            return 'This will pull the latest code from https://github.com/motechgroup/lindrbackend.git (branch main), execute pending database migrations, rebuild application caches, and restart background workers safely.'.$pendingStr;
+                        } catch (\Throwable $e) {
+                            return 'This will pull the latest code from https://github.com/motechgroup/lindrbackend.git (branch main), execute pending database migrations, rebuild application caches, and restart background workers safely.';
+                        }
                     })
                     ->action(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
                         try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
                             $record = $service->executeAction('deploy_latest', auth()->user());
                             Notification::make()
                                 ->success()
@@ -234,20 +258,24 @@ class DeploymentRecordResource extends Resource
                     ->requiresConfirmation()
                     ->modalHeading('Execute Pending Migrations')
                     ->modalDescription(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
-                        $pending = $service->getPendingMigrations();
-                        $count = count($pending);
-                        if ($count === 0) {
-                            return 'Database is up-to-date. No pending migrations to execute.';
-                        }
+                        try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
+                            $pending = $service->getPendingMigrations();
+                            $count = count($pending);
+                            if ($count === 0) {
+                                return 'Database is up-to-date. No pending migrations to execute.';
+                            }
 
-                        return "Execute {$count} pending database migration(s):\n• ".implode("\n• ", $pending);
+                            return "Execute {$count} pending database migration(s):\n• ".implode("\n• ", $pending);
+                        } catch (\Throwable $e) {
+                            return 'Execute pending database migration(s) safely on the live server.';
+                        }
                     })
                     ->action(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
                         try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
                             $record = $service->executeAction('run_migrations', auth()->user());
                             Notification::make()->success()->title('Migrations Executed')->body($record->output_summary)->send();
                         } catch (\Throwable $e) {
@@ -259,9 +287,9 @@ class DeploymentRecordResource extends Resource
                     ->label('Rebuild Cache')
                     ->color('gray')
                     ->action(function () {
-                        /** @var DeploymentService $service */
-                        $service = app(DeploymentService::class);
                         try {
+                            /** @var DeploymentService $service */
+                            $service = app(DeploymentService::class);
                             $service->executeAction('clear_cache', auth()->user());
                             Notification::make()->success()->title('Cache Rebuilt')->send();
                         } catch (\Throwable $e) {

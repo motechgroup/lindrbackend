@@ -8,6 +8,7 @@ use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class DeploymentService
 {
@@ -45,29 +46,34 @@ class DeploymentService
         $appPath = base_path();
 
         if (function_exists('exec')) {
-            $cmd = "cd {$appPath} && git log -n {$limit} --pretty=format:'%h|%H|%an|%ae|%ar|%s' 2>&1";
-            $output = [];
-            @exec($cmd, $output);
+            try {
+                $cmd = "cd {$appPath} && git -c safe.directory=* log -n {$limit} --pretty=format:'%h|%H|%an|%ae|%ar|%s' 2>&1";
+                $output = [];
+                @exec($cmd, $output);
 
-            if (! empty($output) && strpos($output[0], 'fatal') === false && strpos($output[0], 'error') === false) {
-                $commits = [];
-                foreach ($output as $line) {
-                    $parts = explode('|', $line, 6);
-                    if (count($parts) === 6) {
-                        $commits[] = [
-                            'short_hash' => $parts[0],
-                            'full_hash' => $parts[1],
-                            'author' => $parts[2],
-                            'email' => $parts[3],
-                            'date' => $parts[4],
-                            'message' => $parts[5],
-                        ];
+                if (! empty($output) && strpos($output[0], 'fatal') === false && strpos($output[0], 'error') === false) {
+                    $commits = [];
+                    foreach ($output as $line) {
+                        $line = mb_convert_encoding($line, 'UTF-8', 'UTF-8');
+                        $parts = explode('|', $line, 6);
+                        if (count($parts) === 6) {
+                            $commits[] = [
+                                'short_hash' => mb_convert_encoding($parts[0], 'UTF-8', 'UTF-8'),
+                                'full_hash' => mb_convert_encoding($parts[1], 'UTF-8', 'UTF-8'),
+                                'author' => mb_convert_encoding($parts[2], 'UTF-8', 'UTF-8'),
+                                'email' => mb_convert_encoding($parts[3], 'UTF-8', 'UTF-8'),
+                                'date' => mb_convert_encoding($parts[4], 'UTF-8', 'UTF-8'),
+                                'message' => mb_convert_encoding($parts[5], 'UTF-8', 'UTF-8'),
+                            ];
+                        }
+                    }
+
+                    if (! empty($commits)) {
+                        return $commits;
                     }
                 }
-
-                if (! empty($commits)) {
-                    return $commits;
-                }
+            } catch (\Throwable $e) {
+                Log::warning('Git CLI commit fetch error: '.$e->getMessage());
             }
         }
 
@@ -82,12 +88,12 @@ class DeploymentService
                 $commits = [];
                 foreach ($items as $item) {
                     $commits[] = [
-                        'short_hash' => substr($item['sha'] ?? '', 0, 7),
-                        'full_hash' => $item['sha'] ?? '',
-                        'author' => $item['commit']['author']['name'] ?? 'Unknown',
-                        'email' => $item['commit']['author']['email'] ?? '',
-                        'date' => $item['commit']['author']['date'] ?? '',
-                        'message' => strtok($item['commit']['message'] ?? '', "\n"),
+                        'short_hash' => mb_convert_encoding(substr($item['sha'] ?? '', 0, 7), 'UTF-8', 'UTF-8'),
+                        'full_hash' => mb_convert_encoding($item['sha'] ?? '', 'UTF-8', 'UTF-8'),
+                        'author' => mb_convert_encoding($item['commit']['author']['name'] ?? 'Unknown', 'UTF-8', 'UTF-8'),
+                        'email' => mb_convert_encoding($item['commit']['author']['email'] ?? '', 'UTF-8', 'UTF-8'),
+                        'date' => mb_convert_encoding($item['commit']['author']['date'] ?? '', 'UTF-8', 'UTF-8'),
+                        'message' => mb_convert_encoding(strtok($item['commit']['message'] ?? '', "\n"), 'UTF-8', 'UTF-8'),
                     ];
                 }
 
@@ -108,15 +114,21 @@ class DeploymentService
         $appPath = base_path();
 
         if (function_exists('exec')) {
-            $cmd = $commitHash
-                ? "cd {$appPath} && git show {$commitHash} --stat --patch 2>&1"
-                : "cd {$appPath} && git fetch origin main 2>&1 && git diff HEAD..origin/main --stat 2>&1";
+            try {
+                $cmd = $commitHash
+                    ? "cd {$appPath} && git -c safe.directory=* show {$commitHash} --stat --patch 2>&1"
+                    : "cd {$appPath} && git -c safe.directory=* fetch origin main 2>&1 && git -c safe.directory=* diff HEAD..origin/main --stat 2>&1";
 
-            $output = [];
-            @exec($cmd, $output);
+                $output = [];
+                @exec($cmd, $output);
 
-            if (! empty($output)) {
-                return implode("\n", array_slice($output, 0, 300));
+                if (! empty($output)) {
+                    $rawDiff = implode("\n", array_slice($output, 0, 300));
+
+                    return mb_convert_encoding($rawDiff, 'UTF-8', 'UTF-8');
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Git CLI diff error: '.$e->getMessage());
             }
         }
 
@@ -144,10 +156,10 @@ class DeploymentService
             $outputs = [];
 
             if (function_exists('exec')) {
-                $cmd = "cd {$appPath} && git reset --hard {$normalizedHash} 2>&1";
+                $cmd = "cd {$appPath} && git -c safe.directory=* reset --hard {$normalizedHash} 2>&1";
                 $output = [];
                 @exec($cmd, $output);
-                $outputs[] = "=== Git Reset to Commit {$normalizedHash} ===\n".implode("\n", $output);
+                $outputs[] = mb_convert_encoding("=== Git Reset to Commit {$normalizedHash} ===\n".implode("\n", $output), 'UTF-8', 'UTF-8');
             } else {
                 $outputs[] = 'Git reset notice: exec() disabled. Manual rollback recommended.';
             }
@@ -167,7 +179,7 @@ class DeploymentService
 
             $record->update([
                 'status' => 'success',
-                'output_summary' => implode("\n\n", array_filter($outputs)),
+                'output_summary' => mb_convert_encoding(implode("\n\n", array_filter($outputs)), 'UTF-8', 'UTF-8'),
                 'completed_at' => now(),
             ]);
 
@@ -177,7 +189,7 @@ class DeploymentService
         } catch (\Throwable $e) {
             $record->update([
                 'status' => 'failed',
-                'error_summary' => $e->getMessage(),
+                'error_summary' => mb_convert_encoding($e->getMessage(), 'UTF-8', 'UTF-8'),
                 'completed_at' => now(),
             ]);
 
@@ -195,6 +207,10 @@ class DeploymentService
     public function getPendingMigrations(): array
     {
         try {
+            if (! Schema::hasTable('migrations')) {
+                return [];
+            }
+
             /** @var Migrator $migrator */
             $migrator = app('migrator');
             $files = $migrator->getMigrationFiles(database_path('migrations'));
@@ -203,12 +219,14 @@ class DeploymentService
             $pending = [];
             foreach ($files as $name => $file) {
                 if (! in_array($name, $ran)) {
-                    $pending[] = $name;
+                    $pending[] = mb_convert_encoding($name, 'UTF-8', 'UTF-8');
                 }
             }
 
             return array_values($pending);
         } catch (\Throwable $e) {
+            Log::warning('Notice checking pending migrations: '.$e->getMessage());
+
             return [];
         }
     }
@@ -268,7 +286,7 @@ class DeploymentService
                 'commit_author' => $postMeta['author'] ?? $record->commit_author,
                 'executed_migrations' => $executed,
                 'pending_migrations_count' => count($pendingAfter),
-                'output_summary' => is_array($output) ? json_encode($output, JSON_PRETTY_PRINT) : (string) $output,
+                'output_summary' => mb_convert_encoding(is_array($output) ? json_encode($output, JSON_PRETTY_PRINT) : (string) $output, 'UTF-8', 'UTF-8'),
                 'completed_at' => now(),
             ]);
 
@@ -278,7 +296,7 @@ class DeploymentService
         } catch (\Throwable $e) {
             $record->update([
                 'status' => 'failed',
-                'error_summary' => $e->getMessage(),
+                'error_summary' => mb_convert_encoding($e->getMessage(), 'UTF-8', 'UTF-8'),
                 'completed_at' => now(),
             ]);
 
@@ -303,14 +321,12 @@ class DeploymentService
         $outputs[] = $migOutput;
 
         // 3. Rebuild caches
-        Artisan::call('config:cache');
-        Artisan::call('route:cache');
-        Artisan::call('view:cache');
-        $outputs[] = "=== Configuration Caches ===\n".Artisan::output();
+        $cacheOut = $this->runClearCache();
+        $outputs[] = $cacheOut;
 
         // 4. Restart Queue Workers
-        Artisan::call('queue:restart');
-        $outputs[] = "=== Queue Workers ===\n".Artisan::output();
+        $workerOut = $this->runRestartWorkers();
+        $outputs[] = $workerOut;
 
         return implode("\n\n", array_filter($outputs));
     }
@@ -326,21 +342,28 @@ class DeploymentService
         }
 
         $commands = [
-            "cd {$appPath} && git remote set-url origin {$repoUrl} 2>&1",
-            "cd {$appPath} && git fetch origin {$branch} 2>&1",
-            "cd {$appPath} && git pull origin {$branch} 2>&1",
+            "cd {$appPath} && git config --global --add safe.directory '*' 2>&1",
+            "cd {$appPath} && git -c safe.directory=* remote set-url origin {$repoUrl} 2>&1",
+            "cd {$appPath} && git -c safe.directory=* fetch origin {$branch} 2>&1",
+            "cd {$appPath} && git -c safe.directory=* pull origin {$branch} --no-rebase 2>&1",
         ];
 
         $log = [];
         foreach ($commands as $cmd) {
             $output = [];
-            @exec($cmd, $output);
-            if (! empty($output)) {
-                $log[] = implode("\n", $output);
+            try {
+                @exec($cmd, $output);
+                if (! empty($output)) {
+                    $log[] = mb_convert_encoding(implode("\n", $output), 'UTF-8', 'UTF-8');
+                }
+            } catch (\Throwable $e) {
+                $log[] = "Command failed [{$cmd}]: ".$e->getMessage();
             }
         }
 
-        return "=== Git Pull ({$repoUrl} @ {$branch}) ===\n".(implode("\n", $log) ?: 'Git pull completed.');
+        $result = "=== Git Pull ({$repoUrl} @ {$branch}) ===\n".(implode("\n", $log) ?: 'Git pull completed.');
+
+        return mb_convert_encoding($result, 'UTF-8', 'UTF-8');
     }
 
     protected function runMigrations(): string
@@ -357,29 +380,39 @@ class DeploymentService
         $pendingAfter = $this->getPendingMigrations();
         $ranCount = count($pendingBefore) - count($pendingAfter);
 
-        return "=== Database Migrations ({$ranCount} ran, ".count($pendingAfter)." remaining) ===\n".($artisanOut ?: 'No new migrations executed.');
+        $result = "=== Database Migrations ({$ranCount} ran, ".count($pendingAfter)." remaining) ===\n".($artisanOut ?: 'No new migrations executed.');
+
+        return mb_convert_encoding($result, 'UTF-8', 'UTF-8');
     }
 
     protected function runClearCache(): string
     {
-        Artisan::call('optimize:clear');
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        Artisan::call('route:clear');
-        Artisan::call('view:clear');
+        try {
+            Artisan::call('optimize:clear');
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+            Artisan::call('route:clear');
+            Artisan::call('view:clear');
 
-        if (function_exists('opcache_reset')) {
-            @opcache_reset();
+            if (function_exists('opcache_reset')) {
+                @opcache_reset();
+            }
+
+            return 'Caches (compiled views, routes, configs, and OPcache) cleared and purged successfully.';
+        } catch (\Throwable $e) {
+            return 'Cache clear notice: '.$e->getMessage();
         }
-
-        return 'Caches (compiled views, routes, configs, and OPcache) cleared and purged successfully.';
     }
 
     protected function runRestartWorkers(): string
     {
-        Artisan::call('queue:restart');
+        try {
+            Artisan::call('queue:restart');
 
-        return Artisan::output() ?: 'Queue workers signal sent successfully.';
+            return Artisan::output() ?: 'Queue workers signal sent successfully.';
+        } catch (\Throwable $e) {
+            return 'Worker restart notice: '.$e->getMessage();
+        }
     }
 
     protected function runHealthCheck(): array
@@ -389,10 +422,14 @@ class DeploymentService
 
     protected function runRollback(): string
     {
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
-        Artisan::call('queue:restart');
+        try {
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+            Artisan::call('queue:restart');
 
-        return 'Rollback cache refresh and queue restart completed successfully.';
+            return 'Rollback cache refresh and queue restart completed successfully.';
+        } catch (\Throwable $e) {
+            return 'Rollback notice: '.$e->getMessage();
+        }
     }
 }

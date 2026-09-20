@@ -1,5 +1,15 @@
 <?php
 
+use App\Enums\UserRole;
+use App\Enums\UserStatus;
+use App\Models\User;
+use App\Models\Wallet;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+
 /**
  * LINDR SHARED HOSTING BROWSER SETUP SCRIPT
  * Comprehensive diagnostic & migration runner for shared hosting.
@@ -13,7 +23,7 @@ error_reporting(E_ALL);
 $secret = $_GET['secret'] ?? '';
 if ($secret !== 'lindr2026') {
     http_response_code(403);
-    die('<h1>Access Denied</h1><p>Please append <code>?secret=lindr2026</code> to the URL to run setup.</p>');
+    exit('<h1>Access Denied</h1><p>Please append <code>?secret=lindr2026</code> to the URL to run setup.</p>');
 }
 
 // Force APP_DEBUG=true in memory for setup diagnostics
@@ -67,7 +77,7 @@ $dirsToFix = [
 ];
 
 foreach ($dirsToFix as $d) {
-    if (!file_exists($d)) {
+    if (! file_exists($d)) {
         @mkdir($d, 0777, true);
     }
     @chmod($d, 0777);
@@ -90,11 +100,11 @@ foreach ($requiredExts as $ext) {
 
 // Database Driver Extension Check
 if (extension_loaded('pdo_mysql')) {
-    echo "<li><span class=\"badge ok\">OK</span> <code>pdo_mysql</code> extension is enabled.</li>";
+    echo '<li><span class="badge ok">OK</span> <code>pdo_mysql</code> extension is enabled.</li>';
 } elseif (extension_loaded('pdo_pgsql')) {
-    echo "<li><span class=\"badge ok\">OK</span> <code>pdo_pgsql</code> extension is enabled.</li>";
+    echo '<li><span class="badge ok">OK</span> <code>pdo_pgsql</code> extension is enabled.</li>';
 } else {
-    echo "<li><span class=\"badge err\">ERROR</span> Neither <code>pdo_mysql</code> nor <code>pdo_pgsql</code> is enabled in PHP! Enable them in cPanel.</li>";
+    echo '<li><span class="badge err">ERROR</span> Neither <code>pdo_mysql</code> nor <code>pdo_pgsql</code> is enabled in PHP! Enable them in cPanel.</li>';
     $hasErrors = true;
 }
 
@@ -113,14 +123,14 @@ $dirsToTest = [
 echo '<ul>';
 foreach ($dirsToTest as $label => $path) {
     $writable = is_writable($path);
-    if (!$writable) {
-        $testFile = $path . '/.write_test_' . time();
+    if (! $writable) {
+        $testFile = $path.'/.write_test_'.time();
         if (@file_put_contents($testFile, 'test') !== false) {
             @unlink($testFile);
             $writable = true;
         }
     }
-    
+
     if ($writable) {
         echo "<li><span class=\"badge ok\">OK</span> <code>$label</code> is writable.</li>";
     } else {
@@ -136,20 +146,22 @@ echo '<div class="card">';
 echo '<h3>3. Environment & Database Connection Test</h3>';
 
 $envPath = __DIR__.'/../.env';
-if (!file_exists($envPath)) {
+if (! file_exists($envPath)) {
     echo '<p><span class="badge err">ERROR</span> <code>.env</code> file not found in root directory!</p>';
     $hasErrors = true;
 } else {
     echo '<p><span class="badge ok">OK</span> <code>.env</code> file exists.</p>';
-    
+
     // Parse .env manually
     $envLines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     $envVars = [];
     foreach ($envLines as $line) {
         $line = trim($line);
-        if ($line === '' || strpos($line, '#') === 0) continue;
+        if ($line === '' || strpos($line, '#') === 0) {
+            continue;
+        }
         if (strpos($line, '=') !== false) {
-            list($key, $val) = explode('=', $line, 2);
+            [$key, $val] = explode('=', $line, 2);
             $envVars[trim($key)] = trim($val, " \t\n\r\0\x0B\"'");
         }
     }
@@ -171,20 +183,20 @@ if (!file_exists($envPath)) {
     if ($dbDriver === 'sqlite') {
         echo '<p><span class="badge err">FAIL</span> <code>DB_CONNECTION=sqlite</code> is set in <code>.env</code>!</p>';
         echo '<p class="info">💡 <strong>Action Required:</strong> Edit your <code>.env</code> file in cPanel File Manager and set your MySQL credentials:<br>'
-            . '<code>DB_CONNECTION=mysql</code><br>'
-            . '<code>DB_HOST=127.0.0.1</code><br>'
-            . '<code>DB_PORT=3306</code><br>'
-            . '<code>DB_DATABASE=your_cpanel_mysql_db_name</code><br>'
-            . '<code>DB_USERNAME=your_cpanel_mysql_user</code><br>'
-            . '<code>DB_PASSWORD=your_cpanel_mysql_password</code></p>';
+            .'<code>DB_CONNECTION=mysql</code><br>'
+            .'<code>DB_HOST=127.0.0.1</code><br>'
+            .'<code>DB_PORT=3306</code><br>'
+            .'<code>DB_DATABASE=your_cpanel_mysql_db_name</code><br>'
+            .'<code>DB_USERNAME=your_cpanel_mysql_user</code><br>'
+            .'<code>DB_PASSWORD=your_cpanel_mysql_password</code></p>';
         $hasErrors = true;
     } else {
         echo "<p>Testing direct PDO connection to database: <code>$dbDriver://$dbUser@$dbHost:$dbPort/$dbName</code>...</p>";
 
-        if ($dbDriver === 'pgsql' && !extension_loaded('pdo_pgsql')) {
+        if ($dbDriver === 'pgsql' && ! extension_loaded('pdo_pgsql')) {
             echo '<p><span class="badge err">FAIL</span> <code>DB_CONNECTION=pgsql</code> is set in .env, but <code>pdo_pgsql</code> extension is NOT enabled in PHP.</p>';
             $hasErrors = true;
-        } elseif ($dbDriver === 'mysql' && !extension_loaded('pdo_mysql')) {
+        } elseif ($dbDriver === 'mysql' && ! extension_loaded('pdo_mysql')) {
             echo '<p><span class="badge err">FAIL</span> <code>DB_CONNECTION=mysql</code> is set in .env, but <code>pdo_mysql</code> extension is NOT enabled in PHP.</p>';
             $hasErrors = true;
         } else {
@@ -192,14 +204,14 @@ if (!file_exists($envPath)) {
                 $dsn = $dbDriver === 'mysql'
                     ? "mysql:host=$dbHost;port=$dbPort;dbname=$dbName;charset=utf8mb4"
                     : "pgsql:host=$dbHost;port=$dbPort;dbname=$dbName";
-                    
+
                 $pdo = new PDO($dsn, $dbUser, $dbPass, [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_TIMEOUT => 5
+                    PDO::ATTR_TIMEOUT => 5,
                 ]);
                 echo '<p><span class="badge ok">SUCCESS</span> Direct PDO database connection successful!</p>';
-            } catch (\Throwable $pdoEx) {
-                echo '<p><span class="badge err">FAIL</span> Database Connection Error: <code>' . htmlspecialchars($pdoEx->getMessage()) . '</code></p>';
+            } catch (Throwable $pdoEx) {
+                echo '<p><span class="badge err">FAIL</span> Database Connection Error: <code>'.htmlspecialchars($pdoEx->getMessage()).'</code></p>';
                 echo '<p class="info">Please check DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, and DB_PASSWORD in your <code>.env</code> file.</p>';
                 $hasErrors = true;
             }
@@ -208,7 +220,7 @@ if (!file_exists($envPath)) {
 }
 echo '</div>';
 
-if ($hasErrors && !isset($_GET['force'])) {
+if ($hasErrors && ! isset($_GET['force'])) {
     echo '<div class="card" style="border-color:#dc2626;">';
     echo '<h2>⚠️ Pre-Flight Verification Failed</h2>';
     echo '<p>Please resolve the red errors above, or click below to force attempt setup anyway:</p>';
@@ -226,78 +238,78 @@ try {
     define('LARAVEL_START', microtime(true));
     require __DIR__.'/../vendor/autoload.php';
 
-    /** @var \Illuminate\Foundation\Application $app */
+    /** @var Application $app */
     $app = require_once __DIR__.'/../bootstrap/app.php';
 
-    $kernel = $app->make(\Illuminate\Contracts\Console\Kernel::class);
+    $kernel = $app->make(Kernel::class);
     $kernel->bootstrap();
 
     echo "=== 4.1 Running Database Migrations ===\n";
-    \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
+    Schema::disableForeignKeyConstraints();
 
     try {
         if (isset($_GET['fresh'])) {
             echo "Wiping existing tables clean...\n";
-            \Illuminate\Support\Facades\Artisan::call('db:wipe', ['--force' => true]);
-            echo \Illuminate\Support\Facades\Artisan::output();
+            Artisan::call('db:wipe', ['--force' => true]);
+            echo Artisan::output();
         }
 
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        echo \Illuminate\Support\Facades\Artisan::output() . "\n";
-    } catch (\Throwable $migErr) {
-        echo "⚠️ Notice during migration: " . $migErr->getMessage() . "\n";
+        Artisan::call('migrate', ['--force' => true]);
+        echo Artisan::output()."\n";
+    } catch (Throwable $migErr) {
+        echo '⚠️ Notice during migration: '.$migErr->getMessage()."\n";
         echo "Attempting clean database wipe and re-migration...\n";
-        \Illuminate\Support\Facades\Artisan::call('db:wipe', ['--force' => true]);
-        echo \Illuminate\Support\Facades\Artisan::output();
+        Artisan::call('db:wipe', ['--force' => true]);
+        echo Artisan::output();
 
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        echo \Illuminate\Support\Facades\Artisan::output() . "\n";
+        Artisan::call('migrate', ['--force' => true]);
+        echo Artisan::output()."\n";
     } finally {
-        \Illuminate\Support\Facades\Schema::enableForeignKeyConstraints();
+        Schema::enableForeignKeyConstraints();
     }
 
     echo "=== 4.2 Seeding Initial Database Records ===\n";
     try {
-        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-        echo \Illuminate\Support\Facades\Artisan::output() . "\n";
-    } catch (\Throwable $seedErr) {
-        echo "Seeding Notice: " . $seedErr->getMessage() . "\n";
+        Artisan::call('db:seed', ['--force' => true]);
+        echo Artisan::output()."\n";
+    } catch (Throwable $seedErr) {
+        echo 'Seeding Notice: '.$seedErr->getMessage()."\n";
     }
 
     echo "=== 4.3 Ensuring Administrator User Account ===\n";
     try {
-        $admin = \App\Models\User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@lindr.app'],
             [
                 'name' => 'Lindr Administrator',
-                'password' => \Illuminate\Support\Facades\Hash::make('password'),
-                'role' => \App\Enums\UserRole::Admin,
-                'status' => \App\Enums\UserStatus::Active,
+                'password' => Hash::make('password'),
+                'role' => UserRole::Admin,
+                'status' => UserStatus::Active,
                 'email_verified_at' => now(),
             ]
         );
-        \App\Models\Wallet::firstOrCreate(['user_id' => $admin->id], ['coin_balance' => 0]);
+        Wallet::firstOrCreate(['user_id' => $admin->id], ['coin_balance' => 0]);
         echo "✅ Admin Account Ready: admin@lindr.app / password\n\n";
-    } catch (\Throwable $adminErr) {
-        echo "Admin Setup Notice: " . $adminErr->getMessage() . "\n";
+    } catch (Throwable $adminErr) {
+        echo 'Admin Setup Notice: '.$adminErr->getMessage()."\n";
     }
 
     echo "=== 4.4 Building Configuration Caches ===\n";
-    \Illuminate\Support\Facades\Artisan::call('config:cache');
-    echo \Illuminate\Support\Facades\Artisan::output();
+    Artisan::call('config:cache');
+    echo Artisan::output();
 
-    \Illuminate\Support\Facades\Artisan::call('route:cache');
-    echo \Illuminate\Support\Facades\Artisan::output();
+    Artisan::call('route:cache');
+    echo Artisan::output();
 
-    \Illuminate\Support\Facades\Artisan::call('view:cache');
-    echo \Illuminate\Support\Facades\Artisan::output() . "\n";
+    Artisan::call('view:cache');
+    echo Artisan::output()."\n";
 
     echo "=== 4.5 Creating Storage Symlink ===\n";
     try {
-        \Illuminate\Support\Facades\Artisan::call('storage:link');
-        echo \Illuminate\Support\Facades\Artisan::output() . "\n";
-    } catch (\Throwable $stErr) {
-        echo "Storage Link Notice: " . $stErr->getMessage() . "\n";
+        Artisan::call('storage:link');
+        echo Artisan::output()."\n";
+    } catch (Throwable $stErr) {
+        echo 'Storage Link Notice: '.$stErr->getMessage()."\n";
     }
 
     echo "=== 🎉 Setup Completed Successfully! ===\n";
@@ -305,11 +317,11 @@ try {
     echo "Admin Access Portal: /access\n";
     echo "Filament Admin Panel: /admin\n";
     echo "Default Admin Login: admin@lindr.app / password\n";
-} catch (\Throwable $e) {
+} catch (Throwable $e) {
     echo "❌ EXCEPTION THROWN DURING SETUP:\n";
-    echo "Message: " . $e->getMessage() . "\n";
-    echo "File: " . $e->getFile() . ":" . $e->getLine() . "\n\n";
-    echo "Stack Trace:\n" . $e->getTraceAsString() . "\n";
+    echo 'Message: '.$e->getMessage()."\n";
+    echo 'File: '.$e->getFile().':'.$e->getLine()."\n\n";
+    echo "Stack Trace:\n".$e->getTraceAsString()."\n";
 }
 
 echo '</pre>';

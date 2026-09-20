@@ -4,10 +4,10 @@ namespace App\Services;
 
 use App\Models\DeploymentRecord;
 use App\Models\User;
+use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
 
 class DeploymentService
 {
@@ -188,6 +188,32 @@ class DeploymentService
     }
 
     /**
+     * Get list of pending migration file names.
+     *
+     * @return array<int, string>
+     */
+    public function getPendingMigrations(): array
+    {
+        try {
+            /** @var Migrator $migrator */
+            $migrator = app('migrator');
+            $files = $migrator->getMigrationFiles(database_path('migrations'));
+            $ran = $migrator->getRepository()->getRan();
+
+            $pending = [];
+            foreach ($files as $name => $file) {
+                if (! in_array($name, $ran)) {
+                    $pending[] = $name;
+                }
+            }
+
+            return array_values($pending);
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
      * Execute a whitelisted deployment action with full audit logging.
      *
      * @throws \InvalidArgumentException
@@ -200,10 +226,18 @@ class DeploymentService
             throw new \InvalidArgumentException("Unauthorized deployment action '{$action}'. Only whitelisted operations are permitted.");
         }
 
+        $pendingBefore = $this->getPendingMigrations();
+        $recentCommits = $this->getRecentCommits(1);
+        $commitMeta = $recentCommits[0] ?? [];
+
         $record = DeploymentRecord::create([
             'initiated_by_user_id' => $initiator?->id,
             'action' => $normalizedAction,
             'branch_version' => env('GIT_BRANCH', 'main'),
+            'commit_hash' => $commitMeta['short_hash'] ?? null,
+            'commit_message' => $commitMeta['message'] ?? null,
+            'commit_author' => $commitMeta['author'] ?? null,
+            'pending_migrations_count' => count($pendingBefore),
             'status' => 'running',
             'ip_address' => $ipAddress,
             'started_at' => now(),
@@ -220,8 +254,20 @@ class DeploymentService
                 'rollback' => $this->runRollback(),
             };
 
+            $pendingAfter = $this->getPendingMigrations();
+            $executed = array_values(array_diff($pendingBefore, $pendingAfter));
+
+            // Refresh latest commit metadata in case git_pull/deploy_latest pulled new commits
+            $postCommits = $this->getRecentCommits(1);
+            $postMeta = $postCommits[0] ?? $commitMeta;
+
             $record->update([
                 'status' => 'success',
+                'commit_hash' => $postMeta['short_hash'] ?? $record->commit_hash,
+                'commit_message' => $postMeta['message'] ?? $record->commit_message,
+                'commit_author' => $postMeta['author'] ?? $record->commit_author,
+                'executed_migrations' => $executed,
+                'pending_migrations_count' => count($pendingAfter),
                 'output_summary' => is_array($output) ? json_encode($output, JSON_PRETTY_PRINT) : (string) $output,
                 'completed_at' => now(),
             ]);
@@ -253,13 +299,8 @@ class DeploymentService
         }
 
         // 2. Run migrations safely
-        Schema::disableForeignKeyConstraints();
-        try {
-            Artisan::call('migrate', ['--force' => true]);
-            $outputs[] = "=== Database Migrations ===\n".Artisan::output();
-        } finally {
-            Schema::enableForeignKeyConstraints();
-        }
+        $migOutput = $this->runMigrations();
+        $outputs[] = $migOutput;
 
         // 3. Rebuild caches
         Artisan::call('config:cache');
@@ -304,14 +345,19 @@ class DeploymentService
 
     protected function runMigrations(): string
     {
-        Schema::disableForeignKeyConstraints();
+        $pendingBefore = $this->getPendingMigrations();
+
         try {
             Artisan::call('migrate', ['--force' => true]);
-
-            return Artisan::output() ?: 'Migrations executed successfully.';
-        } finally {
-            Schema::enableForeignKeyConstraints();
+            $artisanOut = Artisan::output();
+        } catch (\Throwable $e) {
+            $artisanOut = 'Migration error: '.$e->getMessage();
         }
+
+        $pendingAfter = $this->getPendingMigrations();
+        $ranCount = count($pendingBefore) - count($pendingAfter);
+
+        return "=== Database Migrations ({$ranCount} ran, ".count($pendingAfter)." remaining) ===\n".($artisanOut ?: 'No new migrations executed.');
     }
 
     protected function runClearCache(): string

@@ -14,6 +14,11 @@ class DeploymentRecord extends Model
         'initiated_by_user_id',
         'action',
         'branch_version',
+        'commit_hash',
+        'commit_message',
+        'commit_author',
+        'executed_migrations',
+        'pending_migrations_count',
         'status',
         'output_summary',
         'error_summary',
@@ -23,6 +28,8 @@ class DeploymentRecord extends Model
     ];
 
     protected $casts = [
+        'executed_migrations' => 'array',
+        'pending_migrations_count' => 'integer',
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

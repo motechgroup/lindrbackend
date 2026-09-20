@@ -20,26 +20,29 @@ class NotificationController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate((int) $request->input('per_page', 20));
 
+        $list = collect($notifications->items())->map(function ($item) {
+            $payload = json_decode($item->data, true) ?? [];
+
+            return [
+                'id' => (string) $item->id,
+                'type' => $payload['notification_type'] ?? 'SYSTEM',
+                'category' => $payload['category'] ?? 'system',
+                'title' => $payload['title'] ?? 'Notification',
+                'body' => $payload['body'] ?? '',
+                'data' => $payload['metadata'] ?? null,
+                'read_at' => $item->read_at,
+                'created_at' => $item->created_at,
+            ];
+        })->values()->all();
+
         return response()->json([
             'success' => true,
             'message' => 'Notifications retrieved.',
-            'data' => collect($notifications->items())->map(function ($item) {
-                $payload = json_decode($item->data, true) ?? [];
-
-                return [
-                    'id' => $item->id,
-                    'type' => $payload['notification_type'] ?? 'SYSTEM',
-                    'category' => $payload['category'] ?? 'system',
-                    'title' => $payload['title'] ?? 'Notification',
-                    'body' => $payload['body'] ?? '',
-                    'data' => $payload['metadata'] ?? null,
-                    'read_at' => $item->read_at,
-                    'created_at' => $item->created_at,
-                ];
-            }),
+            'data' => $list,
             'meta' => [
                 'current_page' => $notifications->currentPage(),
                 'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
                 'total' => $notifications->total(),
             ],
         ]);

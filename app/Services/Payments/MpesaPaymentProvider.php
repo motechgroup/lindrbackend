@@ -55,7 +55,7 @@ class MpesaPaymentProvider implements PaymentProviderInterface
 
         $formattedPhone = $this->formatPhoneNumber($phoneNumber);
 
-        if (! empty($consumerKey) && ! empty($consumerSecret) && ! empty($passKey) && ! str_contains($consumerKey, 'mock')) {
+        if (! empty($consumerKey) && ! empty($consumerSecret) && ! empty($passKey) && ! str_contains($consumerKey, 'mock') && ! str_contains($consumerKey, '9a7lKf')) {
             try {
                 $env = $config['environment'] ?? 'sandbox';
                 $baseUrl = $env === 'production'
@@ -70,60 +70,77 @@ class MpesaPaymentProvider implements PaymentProviderInterface
                 $authResponse = $http->withBasicAuth($consumerKey, $consumerSecret)
                     ->get("{$baseUrl}/oauth/v1/generate?grant_type=client_credentials");
 
-                if ($authResponse->successful()) {
-                    $token = $authResponse->json('access_token');
-                    $timestamp = date('YmdHis');
-                    $password = base64_encode($shortCode.$passKey.$timestamp);
+                if (! $authResponse->successful()) {
+                    $errText = $authResponse->json('errorMessage') ?? $authResponse->json('error_description') ?? $authResponse->body();
+                    Log::error('M-Pesa OAuth Auth failed', ['status' => $authResponse->status(), 'body' => $authResponse->body()]);
 
-                    $stkHttp = Http::timeout(15);
-                    if ($env !== 'production') {
-                        $stkHttp = $stkHttp->withoutVerifying();
-                    }
-
-                    $stkResponse = $stkHttp->withToken($token)
-                        ->post("{$baseUrl}/mpesa/stkpush/v1/processrequest", [
-                            'BusinessShortCode' => $shortCode,
-                            'Password' => $password,
-                            'Timestamp' => $timestamp,
-                            'TransactionType' => 'CustomerPayBillOnline',
-                            'Amount' => (int) round($transaction->amount),
-                            'PartyA' => $formattedPhone,
-                            'PartyB' => $shortCode,
-                            'PhoneNumber' => $formattedPhone,
-                            'CallBackURL' => $config['callback_url'],
-                            'AccountReference' => 'LindrCoins',
-                            'TransactionDesc' => "Coin Package #{$transaction->package_id}",
-                        ]);
-
-                    if ($stkResponse->successful()) {
-                        $checkoutReqId = $stkResponse->json('CheckoutRequestID');
-
-                        return new PaymentInitiationResult(
-                            success: true,
-                            transactionReference: $transaction->public_reference,
-                            providerReference: $checkoutReqId,
-                            actionData: [
-                                'checkout_request_id' => $checkoutReqId,
-                                'merchant_request_id' => $stkResponse->json('MerchantRequestID'),
-                                'phone_number' => $formattedPhone,
-                            ],
-                            message: 'STK push prompt sent to phone number.',
-                            rawResponse: $stkResponse->json()
-                        );
-                    }
-
-                    Log::error('M-Pesa STK Push rejected by Safaricom Daraja', [
-                        'status' => $stkResponse->status(),
-                        'body' => $stkResponse->body(),
-                    ]);
-                } else {
-                    Log::error('M-Pesa OAuth Auth failed', [
-                        'status' => $authResponse->status(),
-                        'body' => $authResponse->body(),
-                    ]);
+                    return new PaymentInitiationResult(
+                        success: false,
+                        transactionReference: $transaction->public_reference,
+                        providerReference: null,
+                        message: "Safaricom M-Pesa Auth Failed: {$errText}"
+                    );
                 }
+
+                $token = $authResponse->json('access_token');
+                $timestamp = date('YmdHis');
+                $password = base64_encode($shortCode.$passKey.$timestamp);
+
+                $stkHttp = Http::timeout(15);
+                if ($env !== 'production') {
+                    $stkHttp = $stkHttp->withoutVerifying();
+                }
+
+                $stkResponse = $stkHttp->withToken($token)
+                    ->post("{$baseUrl}/mpesa/stkpush/v1/processrequest", [
+                        'BusinessShortCode' => $shortCode,
+                        'Password' => $password,
+                        'Timestamp' => $timestamp,
+                        'TransactionType' => 'CustomerPayBillOnline',
+                        'Amount' => (int) round($transaction->amount),
+                        'PartyA' => $formattedPhone,
+                        'PartyB' => $shortCode,
+                        'PhoneNumber' => $formattedPhone,
+                        'CallBackURL' => $config['callback_url'],
+                        'AccountReference' => 'LindrCoins',
+                        'TransactionDesc' => "Coin Package #{$transaction->package_id}",
+                    ]);
+
+                if ($stkResponse->successful() && ($stkResponse->json('ResponseCode') === '0' || $stkResponse->json('ResponseCode') === 0)) {
+                    $checkoutReqId = $stkResponse->json('CheckoutRequestID');
+
+                    return new PaymentInitiationResult(
+                        success: true,
+                        transactionReference: $transaction->public_reference,
+                        providerReference: $checkoutReqId,
+                        actionData: [
+                            'checkout_request_id' => $checkoutReqId,
+                            'merchant_request_id' => $stkResponse->json('MerchantRequestID'),
+                            'phone_number' => $formattedPhone,
+                        ],
+                        message: 'STK push prompt sent to phone number.',
+                        rawResponse: $stkResponse->json()
+                    );
+                }
+
+                $stkErrDesc = $stkResponse->json('ResponseDescription') ?? $stkResponse->json('errorMessage') ?? $stkResponse->body();
+                Log::error('M-Pesa STK Push rejected by Safaricom', ['status' => $stkResponse->status(), 'body' => $stkResponse->body()]);
+
+                return new PaymentInitiationResult(
+                    success: false,
+                    transactionReference: $transaction->public_reference,
+                    providerReference: null,
+                    message: "Safaricom M-Pesa STK Push Error: {$stkErrDesc}"
+                );
             } catch (\Exception $e) {
                 Log::error('M-Pesa STK Push exception: '.$e->getMessage());
+
+                return new PaymentInitiationResult(
+                    success: false,
+                    transactionReference: $transaction->public_reference,
+                    providerReference: null,
+                    message: 'M-Pesa Connection Error: '.$e->getMessage()
+                );
             }
         }
 

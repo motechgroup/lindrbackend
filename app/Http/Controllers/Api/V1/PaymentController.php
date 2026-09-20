@@ -106,7 +106,7 @@ class PaymentController extends Controller
             })
             ->firstOrFail();
 
-        if ($transaction->status === 'pending' && str_starts_with($transaction->provider_reference ?? '', 'ws_CO_')) {
+        if ($transaction->status === 'pending' && ($transaction->provider_code === 'mock' || str_starts_with($transaction->provider_reference ?? '', 'MOCK_'))) {
             $this->paymentService->applyTransactionStatus($transaction, 'successful', 'MOCK-RECEIPT-'.rand(100000, 999999));
             $transaction->refresh();
         }

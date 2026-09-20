@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CallSession;
 use App\Models\CreatorCreditLedger;
 use App\Models\User;
 use App\Models\UserProfile;
@@ -10,6 +11,8 @@ use App\Models\WalletTransaction;
 use App\Services\PresenceService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class CallPresenceTest extends TestCase
@@ -431,5 +434,67 @@ class CallPresenceTest extends TestCase
 
         // Unverified creator receives zero credit ledger entries
         $this->assertEquals(0, CreatorCreditLedger::where('user_id', $unverifiedCreator->id)->count());
+    }
+
+    public function test_stale_call_session_is_automatically_reconciled_so_user_is_not_permanently_busy(): void
+    {
+        $caller = User::factory()->create();
+        $receiver = User::factory()->create();
+
+        $this->walletService->creditCoins($caller, 100);
+
+        UserProfile::create([
+            'user_id' => $receiver->id,
+            'display_name' => 'Receiver',
+            'online_status' => 'busy',
+            'last_heartbeat_at' => now(),
+            'date_of_birth' => '1998-05-15',
+            'gender' => 'female',
+        ]);
+
+        UserProfile::create([
+            'user_id' => $caller->id,
+            'display_name' => 'Caller',
+            'online_status' => 'available',
+            'last_heartbeat_at' => now(),
+        ]);
+
+        // Create a stale call session updated 5 minutes ago with ended_at = null
+        $staleCall = CallSession::create([
+            'id' => (string) Str::uuid(),
+            'caller_id' => $caller->id,
+            'receiver_id' => $receiver->id,
+            'call_type' => 'video',
+            'room_name' => 'stale_room_123',
+            'rate_per_minute' => 20,
+            'status' => CallSession::STATUS_CONNECTED,
+            'started_at' => now()->subMinutes(10),
+            'connected_at' => now()->subMinutes(10),
+            'ended_at' => null,
+        ]);
+
+        DB::table('call_sessions')->where('id', $staleCall->id)->update([
+            'updated_at' => now()->subMinutes(5),
+            'connected_at' => now()->subMinutes(5),
+        ]);
+
+        // User presence check auto-reconciles the stale call
+        $presence = $this->presenceService->getUserPresence($receiver);
+
+        $this->assertEquals('online', $presence['status']);
+        $this->assertTrue($presence['is_available']);
+        $this->assertEquals('available', $receiver->fresh()->profile->online_status);
+        $this->assertEquals(CallSession::STATUS_CANCELLED, $staleCall->fresh()->status);
+        $this->assertEquals('TIMEOUT_RECONCILED', $staleCall->fresh()->end_reason);
+
+        // New call to receiver now succeeds without throwing CallBusyException
+        $response = $this->actingAs($caller, 'sanctum')
+            ->postJson('/api/v1/calls/request', [
+                'receiver_id' => $receiver->id,
+                'rate_per_minute' => 20,
+            ]);
+
+        $response->assertStatus(201)
+            ->assertJsonPath('success', true);
     }
 }

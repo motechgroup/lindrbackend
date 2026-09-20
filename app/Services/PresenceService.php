@@ -11,6 +11,44 @@ class PresenceService
     /**
      * Update or record heartbeat for a user.
      */
+    /**
+     * Reconcile any stale ringing or connected call sessions for a given user.
+     * Returns true if there is still a REAL active call in progress.
+     */
+    public function reconcileStaleCallsForUser(User $user): bool
+    {
+        $sessions = CallSession::where(function ($q) use ($user) {
+            $q->where('caller_id', $user->id)
+                ->orWhere('receiver_id', $user->id);
+        })
+            ->whereIn('status', ['initiated', 'active', CallSession::STATUS_RINGING, CallSession::STATUS_CONNECTED])
+            ->get();
+
+        $hasRealActiveCall = false;
+
+        foreach ($sessions as $session) {
+            $isRingingStale = in_array($session->status, ['initiated', CallSession::STATUS_RINGING])
+                && $session->created_at->lt(now()->subSeconds(30));
+
+            $lastUpdated = $session->updated_at ?? $session->connected_at ?? $session->started_at;
+            $isConnectedStale = in_array($session->status, ['active', CallSession::STATUS_CONNECTED])
+                && ($lastUpdated ? $lastUpdated->lt(now()->subMinutes(2)) : true);
+
+            if ($isRingingStale) {
+                app(CallService::class)->endCall($session, 'MISSED');
+            } elseif ($isConnectedStale) {
+                app(CallService::class)->endCall($session, 'TIMEOUT_RECONCILED');
+            } else {
+                $hasRealActiveCall = true;
+            }
+        }
+
+        return $hasRealActiveCall;
+    }
+
+    /**
+     * Update or record heartbeat for a user.
+     */
     public function updateHeartbeat(User $user): array
     {
         $profile = UserProfile::firstOrCreate(
@@ -18,15 +56,7 @@ class PresenceService
             ['display_name' => explode(' ', $user->name)[0] ?? 'User']
         );
 
-        $activeCall = CallSession::where(function ($q) use ($user) {
-            $q->where('caller_id', $user->id)
-                ->orWhere('receiver_id', $user->id);
-        })
-            ->whereIn('status', ['initiated', 'active', CallSession::STATUS_RINGING, CallSession::STATUS_CONNECTED])
-            ->latest('started_at')
-            ->first();
-
-        $inActiveCall = ! empty($activeCall);
+        $inActiveCall = $this->reconcileStaleCallsForUser($user);
 
         $newStatus = $inActiveCall ? 'busy' : ($profile->online_status === 'offline' ? 'offline' : ($profile->online_status === 'away' ? 'away' : 'available'));
 
@@ -36,17 +66,28 @@ class PresenceService
         ]);
 
         $presence = $this->getUserPresence($user);
-        if ($activeCall) {
-            $caller = User::find($activeCall->caller_id);
-            $presence['active_call'] = [
-                'id' => (string) $activeCall->id,
-                'caller_id' => $activeCall->caller_id,
-                'receiver_id' => $activeCall->receiver_id,
-                'room_name' => $activeCall->room_name,
-                'status' => $activeCall->status,
-                'caller_name' => $caller?->profile?->display_name ?? $caller?->name ?? 'Lindr Member',
-                'livekit_url' => config('livekit.url', 'wss://livekit.lindr.app'),
-            ];
+
+        if ($inActiveCall) {
+            $activeCall = CallSession::where(function ($q) use ($user) {
+                $q->where('caller_id', $user->id)
+                    ->orWhere('receiver_id', $user->id);
+            })
+                ->whereIn('status', ['initiated', 'active', CallSession::STATUS_RINGING, CallSession::STATUS_CONNECTED])
+                ->latest('started_at')
+                ->first();
+
+            if ($activeCall) {
+                $caller = User::find($activeCall->caller_id);
+                $presence['active_call'] = [
+                    'id' => (string) $activeCall->id,
+                    'caller_id' => $activeCall->caller_id,
+                    'receiver_id' => $activeCall->receiver_id,
+                    'room_name' => $activeCall->room_name,
+                    'status' => $activeCall->status,
+                    'caller_name' => $caller?->profile?->display_name ?? $caller?->name ?? 'Lindr Member',
+                    'livekit_url' => config('livekit.url', 'wss://livekit.lindr.app'),
+                ];
+            }
         }
 
         return $presence;
@@ -95,13 +136,8 @@ class PresenceService
             ];
         }
 
-        // 3. Check if user is in an active call session (IN_CALL)
-        $inActiveCall = CallSession::where(function ($q) use ($user) {
-            $q->where('caller_id', $user->id)
-                ->orWhere('receiver_id', $user->id);
-        })
-            ->whereIn('status', ['initiated', 'active', CallSession::STATUS_RINGING, CallSession::STATUS_CONNECTED])
-            ->exists();
+        // 3. Reconcile stale calls and check real active call status
+        $inActiveCall = $this->reconcileStaleCallsForUser($user);
 
         if ($inActiveCall) {
             return [

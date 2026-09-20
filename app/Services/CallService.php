@@ -63,13 +63,12 @@ class CallService
                 ]);
             }
 
-            // Check if recipient is already in an active or ringing call session
-            $receiverInActiveCall = CallSession::where(function ($q) use ($receiver) {
-                $q->where('caller_id', $receiver->id)
-                    ->orWhere('receiver_id', $receiver->id);
-            })
-                ->whereIn('status', [CallSession::STATUS_RINGING, CallSession::STATUS_CONNECTED, 'initiated', 'active'])
-                ->exists();
+            // Auto-reconcile stale call sessions for recipient & caller first
+            $receiverInActiveCall = $this->presenceService->reconcileStaleCallsForUser($receiver);
+            $this->presenceService->reconcileStaleCallsForUser($caller);
+
+            // Re-read receiver profile online status after reconciliation
+            $receiverProfile->refresh();
 
             if ($receiverInActiveCall || $receiverProfile->online_status === 'busy') {
                 $receiverName = $receiverProfile->display_name ?? $receiver->name;

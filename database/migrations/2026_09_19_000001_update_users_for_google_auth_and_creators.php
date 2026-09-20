@@ -42,14 +42,16 @@ return new class extends Migration
         });
 
         if (Schema::hasTable('wallets')) {
-            Schema::table('wallets', function (Blueprint $table) {
-                if (! Schema::hasColumn('wallets', 'balance')) {
+            if (! Schema::hasColumn('wallets', 'balance')) {
+                Schema::table('wallets', function (Blueprint $table) {
                     $table->integer('balance')->default(0);
-                }
-                if (! Schema::hasColumn('wallets', 'credits')) {
+                });
+            }
+            if (! Schema::hasColumn('wallets', 'credits')) {
+                Schema::table('wallets', function (Blueprint $table) {
                     $table->integer('credits')->default(0);
-                }
-            });
+                });
+            }
         }
     }
 

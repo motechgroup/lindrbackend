@@ -25,9 +25,8 @@ class PaymentProvidersTable
                 ToggleColumn::make('enabled')
                     ->label('Enabled')
                     ->sortable(),
-                IconColumn::make('test_mode')
-                    ->label('Test Mode')
-                    ->boolean(),
+                ToggleColumn::make('test_mode')
+                    ->label('Test Mode'),
                 TextColumn::make('priority')
                     ->numeric()
                     ->sortable(),

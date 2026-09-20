@@ -27,6 +27,7 @@ class UserResource extends JsonResource
             'email' => $this->when($isSelf, $this->email),
             'phone' => $this->when($isSelf, $this->phone),
             'avatar' => $this->avatar,
+            'gender' => $this->profile?->gender ?? ($this->role?->value ?? (string) $this->role),
             'role' => $this->role?->value ?? (string) $this->role,
             'status' => $this->status?->value ?? (string) $this->status,
             'is_onboarded' => $this->isOnboarded(),

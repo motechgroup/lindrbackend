@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Services\AdminVerificationService;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -132,6 +133,12 @@ class UsersTable
                         Notification::make()->title('Creator Verification Revoked')->send();
                     })
                     ->visible(fn (User $record) => auth()->user()?->can('manageCreatorVerification', $record) && ($record->is_creator || in_array($record->creator_status, ['approved', 'verified']))),
+
+                DeleteAction::make()
+                    ->requiresConfirmation()
+                    ->modalHeading('Delete User Account?')
+                    ->modalDescription(fn (User $record) => "Are you sure you want to permanently delete user {$record->name} (#{$record->id})? This action cannot be undone.")
+                    ->successNotificationTitle('User account deleted permanently.'),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

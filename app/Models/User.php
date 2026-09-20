@@ -20,6 +20,17 @@ class User extends Authenticatable implements FilamentUser
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user) {
+            $user->profile()?->delete();
+            $user->photos()->delete();
+            $user->wallet()?->delete();
+            $user->tokens()->delete();
+            $user->devices()->delete();
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *

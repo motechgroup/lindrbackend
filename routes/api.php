@@ -62,6 +62,7 @@ Route::prefix('auth')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/onboarding', [OnboardingController::class, 'onboard']);
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::delete('/account', [AuthController::class, 'deleteAccount']);
     });
 });
 

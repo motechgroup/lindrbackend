@@ -29,13 +29,13 @@ class TokenValidationAndCallThrottlingTest extends TestCase
         $walletRes->assertStatus(200)
             ->assertJsonPath('data.balance', 3200);
 
-        // Initiate match
+        // Initiate match broadcast
         $matchRes = $this->actingAs($maleUser, 'sanctum')->postJson('/api/v1/matches/search');
         $matchRes->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.target_user.id', $femaleUser->id);
+            ->assertJsonPath('data.status', 'broadcasting');
 
-        // Deducted 50 tokens from 3200 -> 3150
+        // Deducted 50 tokens (matching_token_cost) from 3200 -> 3150
         $wallet = $walletService->getWallet($maleUser);
         $this->assertEquals(3150, $wallet->coin_balance);
     }
@@ -60,7 +60,7 @@ class TokenValidationAndCallThrottlingTest extends TestCase
         $matchRes = $this->actingAs($femaleUser, 'sanctum')->postJson('/api/v1/matches/search');
         $matchRes->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.target_user.id', $maleUser->id);
+            ->assertJsonPath('data.status', 'broadcasting');
 
         $wallet = $walletService->getWallet($femaleUser);
         $this->assertEquals(3050, $wallet->coin_balance);
@@ -70,7 +70,7 @@ class TokenValidationAndCallThrottlingTest extends TestCase
     {
         $maleUser = User::factory()->male()->create();
         $walletService = app(WalletService::class);
-        $walletService->creditCoins($maleUser, 10, description: 'Insufficient setup');
+        $walletService->creditCoins($maleUser, 1, description: 'Insufficient setup');
 
         $femaleUser = User::factory()->female()->create();
         UserProfile::factory()->create([
@@ -84,22 +84,21 @@ class TokenValidationAndCallThrottlingTest extends TestCase
             ->assertJsonPath('code', 'INSUFFICIENT_TOKENS');
 
         // Tokens untouched
-        $this->assertEquals(10, $walletService->getWallet($maleUser)->coin_balance);
+        $this->assertEquals(1, $walletService->getWallet($maleUser)->coin_balance);
     }
 
-    public function test_no_tokens_deducted_if_no_eligible_candidate(): void
+    public function test_broadcast_started_when_searching(): void
     {
         $maleUser = User::factory()->male()->create();
         $walletService = app(WalletService::class);
         $walletService->creditCoins($maleUser, 3200, description: 'Balance check');
 
-        // No female users
         $matchRes = $this->actingAs($maleUser, 'sanctum')->postJson('/api/v1/matches/search');
         $matchRes->assertStatus(200)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('code', 'NO_MATCH_AVAILABLE');
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.status', 'broadcasting');
 
-        $this->assertEquals(3200, $walletService->getWallet($maleUser)->coin_balance);
+        $this->assertEquals(3150, $walletService->getWallet($maleUser)->coin_balance);
     }
 
     public function test_legitimate_direct_video_call_can_be_initiated_without_429(): void
@@ -167,17 +166,14 @@ class TokenValidationAndCallThrottlingTest extends TestCase
         $femaleUser = User::factory()->female()->create();
         UserProfile::factory()->create(['user_id' => $femaleUser->id, 'online_status' => 'available', 'gender' => 'female']);
 
-        // Empty body - server determines candidate
+        // Empty body - broadcast match search
         $matchRes = $this->actingAs($maleUser, 'sanctum')->postJson('/api/v1/matches/search', []);
         $matchRes->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.call_session.caller_id', $maleUser->id)
-            ->assertJsonPath('data.call_session.receiver_id', $femaleUser->id);
-
-        $this->assertNotEquals($maleUser->id, $femaleUser->id);
+            ->assertJsonPath('data.status', 'broadcasting');
     }
 
-    public function test_receiver_presence_heartbeat_receives_active_call(): void
+    public function test_receiver_accepts_broadcast_match(): void
     {
         $maleUser = User::factory()->male()->create();
         $walletService = app(WalletService::class);
@@ -187,21 +183,14 @@ class TokenValidationAndCallThrottlingTest extends TestCase
         UserProfile::factory()->create(['user_id' => $femaleUser->id, 'online_status' => 'available', 'gender' => 'female']);
 
         $matchRes = $this->actingAs($maleUser, 'sanctum')->postJson('/api/v1/matches/search', []);
-        $sessionId = $matchRes->json('data.call_session.id');
+        $requestId = $matchRes->json('data.match_request_id');
 
-        // Receiver sends heartbeat and gets active call
-        $presenceRes = $this->actingAs($femaleUser, 'sanctum')->postJson('/api/v1/presence/heartbeat');
-        $presenceRes->assertStatus(200)
-            ->assertJsonPath('data.active_call.id', $sessionId)
-            ->assertJsonPath('data.active_call.caller_id', $maleUser->id)
-            ->assertJsonPath('data.active_call.receiver_id', $femaleUser->id);
-
-        // Receiver accepts active call session
-        $acceptRes = $this->actingAs($femaleUser, 'sanctum')->postJson("/api/v1/calls/{$sessionId}/accept");
+        // Receiver accepts match request
+        $acceptRes = $this->actingAs($femaleUser, 'sanctum')->postJson("/api/v1/match/{$requestId}/accept");
         $acceptRes->assertStatus(200)
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('data.status', 'CONNECTED');
+            ->assertJsonPath('success', true);
 
-        $this->assertNotNull($acceptRes->json('data.livekit_token'));
+        $sessionId = $acceptRes->json('data.call_session.id');
+        $this->assertNotNull($sessionId);
     }
 }

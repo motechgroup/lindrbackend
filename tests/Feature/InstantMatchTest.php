@@ -50,47 +50,40 @@ class InstantMatchTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.target_user.id', $femaleUser->id);
+            ->assertJsonPath('data.status', 'broadcasting');
 
-        // Check wallet debited by 50 tokens
+        // Check wallet debited by 50 tokens (matching_token_cost)
         $wallet = $walletService->getWallet($maleUser);
         $this->assertEquals(50, $wallet->coin_balance);
+
+        $requestId = $response->json('data.match_request_id');
+
+        // Receiver accepts match
+        $acceptRes = $this->actingAs($femaleUser, 'sanctum')
+            ->postJson("/api/v1/match/{$requestId}/accept");
+
+        $acceptRes->assertStatus(200)
+            ->assertJsonPath('success', true);
 
         // Check match and call session records
         $this->assertDatabaseCount('matches', 1);
         $this->assertDatabaseCount('call_sessions', 1);
-
-        // Check both profiles marked busy
-        $this->assertDatabaseHas('user_profiles', [
-            'user_id' => $maleUser->id,
-            'online_status' => 'busy',
-        ]);
-        $this->assertDatabaseHas('user_profiles', [
-            'user_id' => $femaleUser->id,
-            'online_status' => 'busy',
-        ]);
     }
 
-    public function test_instant_match_returns_no_match_available_if_no_user_online(): void
+    public function test_instant_match_returns_broadcasting_status_when_search_started(): void
     {
         $maleUser = User::factory()->male()->create();
         $walletService = app(WalletService::class);
         $walletService->creditCoins($maleUser, 100, description: 'Test setup');
 
-        // No female users available
-
         $response = $this->actingAs($maleUser, 'sanctum')
             ->postJson('/api/v1/matches/search');
 
         $response->assertStatus(200)
-            ->assertJsonPath('success', false)
-            ->assertJsonPath('code', 'NO_MATCH_AVAILABLE');
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.status', 'broadcasting');
 
-        // 0 tokens debited if no match found
         $wallet = $walletService->getWallet($maleUser);
-        $this->assertEquals(100, $wallet->coin_balance);
-
-        $this->assertDatabaseCount('matches', 0);
-        $this->assertDatabaseCount('call_sessions', 0);
+        $this->assertEquals(50, $wallet->coin_balance);
     }
 }

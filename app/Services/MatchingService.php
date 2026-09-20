@@ -3,16 +3,15 @@
 namespace App\Services;
 
 use App\Enums\TransactionType;
-use App\Enums\UserStatus;
 use App\Exceptions\InsufficientTokensException;
 use App\Models\CallSession;
 use App\Models\Like;
+use App\Models\MatchRequest;
 use App\Models\PlatformSetting;
 use App\Models\User;
 use App\Models\UserMatch;
 use App\Models\UserProfile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class MatchingService
@@ -26,151 +25,332 @@ class MatchingService
     ) {}
 
     /**
-     * Search and execute an instant paid match between available users.
-     *
-     * @return array{success: bool, code: string, message: string, match: ?UserMatch, target_user: ?User, call_session: ?CallSession}
+     * Start a broadcast match request across eligible opposite-gender users.
      */
-    public function searchInstantMatch(User $user, ?int $tokenCost = null): array
+    public function startMatchBroadcast(User $initiator, ?int $tokenCost = null): array
     {
         $cost = $tokenCost ?? (int) PlatformSetting::get('matching_token_cost', 50);
 
-        // 1. Pre-check caller token balance
-        $wallet = $this->walletService->getWallet($user);
+        // Pre-check initiator token balance
+        $wallet = $this->walletService->getWallet($initiator);
         if ($wallet->coin_balance < $cost) {
-            Log::info('MATCH DEBUG', [
-                'user_id' => $user->id,
-                'wallet_id' => $wallet->id,
-                'wallet_balance' => $wallet->coin_balance,
-                'match_cost' => $cost,
-                'eligible_candidate' => null,
-                'decision' => 'INSUFFICIENT_TOKENS',
-            ]);
-
-            throw new InsufficientTokensException('Insufficient tokens to initiate instant match.');
+            throw new InsufficientTokensException('Insufficient tokens to initiate match search.');
         }
 
-        return DB::transaction(function () use ($user, $cost, $wallet) {
-            // Lock caller profile
-            $userProfile = UserProfile::where('user_id', $user->id)->lockForUpdate()->first();
-            if (! $userProfile) {
-                $userProfile = UserProfile::create([
-                    'user_id' => $user->id,
-                    'display_name' => explode(' ', $user->name)[0] ?? 'User',
-                ]);
+        return DB::transaction(function () use ($initiator, $cost) {
+            // Deduct match tokens (100% platform revenue, 0 creator credits)
+            $walletTx = $this->walletService->debitCoins(
+                $initiator,
+                $cost,
+                TransactionType::Debit,
+                MatchRequest::class,
+                null,
+                'Broadcast Match Request'
+            );
+
+            // Determine target gender filter
+            $initiatorProfile = $initiator->profile;
+            $gender = strtolower($initiatorProfile?->gender ?? ($initiator->role?->value ?? 'male'));
+            $targetGender = match ($gender) {
+                'male', 'man' => 'female',
+                'female', 'woman' => 'male',
+                default => 'any',
+            };
+
+            $requestId = (string) Str::uuid();
+            $matchRequest = MatchRequest::create([
+                'id' => $requestId,
+                'initiator_id' => $initiator->id,
+                'status' => 'broadcasting',
+                'gender_filter' => $targetGender,
+                'token_cost' => $cost,
+                'declined_user_ids' => [],
+                'expires_at' => now()->addSeconds(30),
+            ]);
+
+            $walletTx->update(['reference_id' => $requestId]);
+
+            return [
+                'success' => true,
+                'code' => 'SEARCHING',
+                'message' => 'Searching for an eligible match...',
+                'match_request_id' => $requestId,
+                'status' => 'broadcasting',
+                'expires_in_seconds' => 30,
+            ];
+        });
+    }
+
+    /**
+     * Get pending broadcast match requests for an eligible receiver.
+     */
+    public function getPendingMatchRequestsForUser(User $receiver): array
+    {
+        $receiverProfile = $receiver->profile;
+        if (! $receiverProfile || $receiverProfile->online_status === 'busy') {
+            return [];
+        }
+
+        $receiverGender = strtolower($receiverProfile->gender ?? ($receiver->role?->value ?? 'female'));
+        $targetFilter = match ($receiverGender) {
+            'male', 'man' => 'male',
+            'female', 'woman' => 'female',
+            default => 'any',
+        };
+
+        $blockedUserIds = $this->blockService->getBlockedUserIds($receiver);
+
+        $pendingRequests = MatchRequest::where('status', 'broadcasting')
+            ->where('initiator_id', '!=', $receiver->id)
+            ->whereNotIn('initiator_id', $blockedUserIds)
+            ->where('expires_at', '>', now())
+            ->where(function ($q) use ($targetFilter) {
+                $q->where('gender_filter', $targetFilter)
+                    ->orWhere('gender_filter', 'any');
+            })
+            ->with(['initiator.profile', 'initiator.photos'])
+            ->latest()
+            ->get();
+
+        $result = [];
+        foreach ($pendingRequests as $req) {
+            $declinedIds = (array) ($req->declined_user_ids ?? []);
+            if (in_array($receiver->id, $declinedIds)) {
+                continue;
             }
 
-            // Exclude blocked users
-            $blockedUserIds = $this->blockService->getBlockedUserIds($user);
+            $initiator = $req->initiator;
+            if (! $initiator || ! $this->safetyService->canMatch($receiver, $initiator)) {
+                continue;
+            }
 
-            // Query candidate users with strict opposite gender filter
-            $query = User::query()
-                ->where('id', '!=', $user->id)
-                ->where('status', UserStatus::Active)
-                ->whereNotIn('id', $blockedUserIds);
+            $result[] = [
+                'id' => (string) $req->id,
+                'match_request_id' => (string) $req->id,
+                'initiator_id' => $initiator->id,
+                'initiator_name' => $initiator->profile?->display_name ?? $initiator->name ?? 'Lindr Member',
+                'initiator_avatar' => $initiator->avatar ?? ($initiator->photos[0]->photo_url ?? null),
+                'country' => $initiator->profile?->country ?? 'KE',
+                'country_code' => $initiator->profile?->country_code ?? 'KE',
+                'created_at' => $req->created_at?->toIso8601String(),
+            ];
+        }
 
-            $query = $this->genderEligibilityService->applyGenderFilter($query, $user);
+        return $result;
+    }
 
-            // Exclude users currently in an active or initiated call session
-            $busyUserIds = CallSession::whereIn('status', ['initiated', 'active', CallSession::STATUS_CONNECTED, CallSession::STATUS_RINGING])
-                ->pluck('caller_id')
-                ->merge(CallSession::whereIn('status', ['initiated', 'active', CallSession::STATUS_CONNECTED, CallSession::STATUS_RINGING])->pluck('receiver_id'))
-                ->unique();
+    /**
+     * Atomically accept a broadcast match request (FIRST ACCEPT WINS).
+     */
+    public function acceptMatchRequest(User $receiver, string $requestId): array
+    {
+        return DB::transaction(function () use ($receiver, $requestId) {
+            /** @var MatchRequest|null $matchRequest */
+            $matchRequest = MatchRequest::where('id', $requestId)->lockForUpdate()->first();
 
-            $query->whereNotIn('id', $busyUserIds);
-
-            // Exclude busy profiles
-            $candidateUser = $query->whereHas('profile', function ($q) {
-                $q->where('online_status', '!=', 'busy');
-            })->inRandomOrder()->lockForUpdate()->first();
-
-            if (! $candidateUser || $candidateUser->id === $user->id || ! $this->safetyService->canMatch($user, $candidateUser)) {
-                Log::info('MATCH DEBUG', [
-                    'user_id' => $user->id,
-                    'wallet_id' => $wallet->id,
-                    'wallet_balance' => $wallet->coin_balance,
-                    'match_cost' => $cost,
-                    'eligible_candidate' => null,
-                    'decision' => 'NO_MATCH',
-                ]);
-
+            if (! $matchRequest) {
                 return [
                     'success' => false,
-                    'code' => 'NO_MATCH_AVAILABLE',
-                    'message' => 'No eligible opposite-gender user is available right now.',
-                    'match' => null,
-                    'target_user' => null,
-                    'call_session' => null,
+                    'code' => 'MATCH_NOT_FOUND',
+                    'message' => 'Match request does not exist.',
                 ];
             }
 
-            Log::info('MATCH DEBUG', [
-                'caller_id' => $user->id,
-                'caller_name' => $user->name,
-                'caller_gender' => $user->role?->value ?? (string) $user->role,
-                'receiver_id' => $candidateUser->id,
-                'receiver_name' => $candidateUser->name,
-                'receiver_gender' => $candidateUser->role?->value ?? (string) $candidateUser->role,
-                'match_cost' => $cost,
-                'decision' => 'ALLOWED',
+            if ($matchRequest->status === 'matched') {
+                return [
+                    'success' => false,
+                    'code' => 'MATCH_NO_LONGER_AVAILABLE',
+                    'message' => 'Match claimed by another user.',
+                ];
+            }
+
+            if ($matchRequest->status !== 'broadcasting' && $matchRequest->status !== 'searching') {
+                return [
+                    'success' => false,
+                    'code' => 'MATCH_INACTIVE',
+                    'message' => "Match request is {$matchRequest->status}.",
+                ];
+            }
+
+            if ($matchRequest->isExpired()) {
+                $matchRequest->update(['status' => 'expired']);
+
+                return [
+                    'success' => false,
+                    'code' => 'MATCH_EXPIRED',
+                    'message' => 'Match request has expired.',
+                ];
+            }
+
+            // Verify receiver is eligible
+            $initiator = User::with(['profile', 'photos'])->find($matchRequest->initiator_id);
+            if (! $initiator || ! $this->safetyService->canMatch($receiver, $initiator)) {
+                return [
+                    'success' => false,
+                    'code' => 'MATCH_INELIGIBLE',
+                    'message' => 'You are not eligible for this match.',
+                ];
+            }
+
+            // ATOMIC LOCK SUCCESS — FIRST ACCEPT WINS!
+            $matchRequest->update([
+                'status' => 'matched',
+                'matched_user_id' => $receiver->id,
             ]);
 
-            // Deduct matching tokens (100% platform revenue, 0 creator credits)
-            $walletTx = $this->walletService->debitCoins(
-                $user,
-                $cost,
-                TransactionType::Debit,
-                UserMatch::class,
-                null,
-                "Instant Match with {$candidateUser->name}"
-            );
-
-            // Reserve both caller and candidate as busy
-            $candidateProfile = UserProfile::where('user_id', $candidateUser->id)->lockForUpdate()->first();
-            if ($candidateProfile) {
-                $candidateProfile->update(['online_status' => 'busy', 'last_heartbeat_at' => now()]);
-            }
-            $userProfile->update(['online_status' => 'busy', 'last_heartbeat_at' => now()]);
-
             // Create UserMatch record
-            $userLowId = min($user->id, $candidateUser->id);
-            $userHighId = max($user->id, $candidateUser->id);
-
-            $matchRecord = UserMatch::firstOrCreate([
+            $userLowId = min($initiator->id, $receiver->id);
+            $userHighId = max($initiator->id, $receiver->id);
+            UserMatch::firstOrCreate([
                 'user_low_id' => $userLowId,
                 'user_high_id' => $userHighId,
             ], [
                 'matched_at' => now(),
             ]);
 
-            // Create CallSession record in RINGING status
+            // Create CallSession record in CONNECTED state
             $roomName = 'lindr_room_'.Str::uuid();
             $callSession = CallSession::create([
                 'id' => (string) Str::uuid(),
-                'caller_id' => $user->id,
-                'receiver_id' => $candidateUser->id,
+                'caller_id' => $initiator->id,
+                'receiver_id' => $receiver->id,
                 'call_type' => 'video',
                 'room_name' => $roomName,
                 'rate_per_minute' => 20,
-                'status' => CallSession::STATUS_RINGING,
+                'status' => CallSession::STATUS_CONNECTED,
                 'started_at' => now(),
-                'coins_charged' => $cost,
+                'coins_charged' => $matchRequest->token_cost,
             ]);
 
-            // Send INCOMING_MATCH notification to candidate user (requires receiver acceptance)
-            $this->notificationService->notifyIncomingMatch($candidateUser, $user);
+            // Reserve both users' presence
+            UserProfile::where('user_id', $initiator->id)->update(['online_status' => 'busy', 'last_heartbeat_at' => now()]);
+            UserProfile::where('user_id', $receiver->id)->update(['online_status' => 'busy', 'last_heartbeat_at' => now()]);
 
-            $walletTx->update(['reference_id' => (string) $matchRecord->id]);
+            $livekitService = app(LiveKitService::class);
+            $livekitData = $livekitService->generateJoinToken($receiver, $roomName);
 
             return [
                 'success' => true,
-                'code' => 'MATCH_FOUND',
-                'message' => 'Match request sent! Waiting for receiver...',
-                'match' => $matchRecord->fresh(['userLow.profile', 'userLow.photos', 'userHigh.profile', 'userHigh.photos']),
-                'target_user' => $candidateUser->fresh(['profile', 'photos']),
+                'code' => 'MATCHED',
+                'message' => 'Match established successfully!',
+                'matched_user' => [
+                    'id' => $initiator->id,
+                    'name' => $initiator->profile?->display_name ?? $initiator->name ?? 'Lindr Member',
+                    'avatar' => $initiator->avatar ?? ($initiator->photos[0]->photo_url ?? null),
+                    'country' => $initiator->profile?->country ?? 'KE',
+                    'country_code' => $initiator->profile?->country_code ?? 'KE',
+                ],
                 'call_session' => $callSession,
-                'livekit' => null,
+                'livekit' => $livekitData,
             ];
         });
+    }
+
+    /**
+     * Receiver declines a broadcast match request.
+     */
+    public function declineMatchRequest(User $receiver, string $requestId): array
+    {
+        $matchRequest = MatchRequest::find($requestId);
+        if ($matchRequest) {
+            $declined = (array) ($matchRequest->declined_user_ids ?? []);
+            if (! in_array($receiver->id, $declined)) {
+                $declined[] = $receiver->id;
+                $matchRequest->update(['declined_user_ids' => $declined]);
+            }
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Match request declined.',
+        ];
+    }
+
+    /**
+     * Initiator cancels a pending match request.
+     */
+    public function cancelMatchRequest(User $initiator, string $requestId): array
+    {
+        $matchRequest = MatchRequest::where('id', $requestId)
+            ->where('initiator_id', $initiator->id)
+            ->first();
+
+        if ($matchRequest && in_array($matchRequest->status, ['broadcasting', 'searching'])) {
+            $matchRequest->update(['status' => 'cancelled']);
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Match request cancelled.',
+        ];
+    }
+
+    /**
+     * Poll status of a match request for initiator.
+     */
+    public function getMatchRequestStatus(User $initiator, string $requestId): array
+    {
+        /** @var MatchRequest|null $matchRequest */
+        $matchRequest = MatchRequest::where('id', $requestId)
+            ->where('initiator_id', $initiator->id)
+            ->with(['matchedUser.profile', 'matchedUser.photos'])
+            ->first();
+
+        if (! $matchRequest) {
+            return [
+                'success' => false,
+                'code' => 'NOT_FOUND',
+                'status' => 'cancelled',
+            ];
+        }
+
+        if ($matchRequest->status === 'broadcasting' && $matchRequest->isExpired()) {
+            $matchRequest->update(['status' => 'expired']);
+        }
+
+        if ($matchRequest->status === 'matched' && $matchRequest->matchedUser) {
+            $matchedUser = $matchRequest->matchedUser;
+
+            // Fetch call session created for this match
+            $callSession = CallSession::where('caller_id', $initiator->id)
+                ->where('receiver_id', $matchedUser->id)
+                ->latest()
+                ->first();
+
+            $livekitData = null;
+            if ($callSession) {
+                $livekitData = app(LiveKitService::class)->generateJoinToken($initiator, $callSession->room_name);
+            }
+
+            return [
+                'success' => true,
+                'code' => 'MATCHED',
+                'status' => 'matched',
+                'matched_user' => [
+                    'id' => $matchedUser->id,
+                    'name' => $matchedUser->profile?->display_name ?? $matchedUser->name ?? 'Lindr Member',
+                    'avatar' => $matchedUser->avatar ?? ($matchedUser->photos[0]->photo_url ?? null),
+                    'country' => $matchedUser->profile?->country ?? 'KE',
+                    'country_code' => $matchedUser->profile?->country_code ?? 'KE',
+                ],
+                'call_session' => $callSession,
+                'livekit' => $livekitData,
+            ];
+        }
+
+        return [
+            'success' => true,
+            'code' => strtoupper($matchRequest->status),
+            'status' => $matchRequest->status,
+        ];
+    }
+
+    /**
+     * Legacy alias for searchInstantMatch.
+     */
+    public function searchInstantMatch(User $user, ?int $tokenCost = null): array
+    {
+        return $this->startMatchBroadcast($user, $tokenCost);
     }
 
     /**

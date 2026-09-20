@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Exceptions\InsufficientTokensException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserMatchResource;
-use App\Http\Resources\UserResource;
 use App\Services\MatchingService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -29,25 +28,15 @@ class MatchController extends Controller
 
     public function search(Request $request): JsonResponse
     {
+        return $this->start($request);
+    }
+
+    public function start(Request $request): JsonResponse
+    {
         try {
-            $result = $this->matchingService->searchInstantMatch($request->user());
+            $result = $this->matchingService->startMatchBroadcast($request->user());
 
-            if (! $result['success']) {
-                return response()->json([
-                    'success' => false,
-                    'code' => $result['code'],
-                    'message' => $result['message'],
-                    'data' => null,
-                ], 200);
-            }
-
-            return $this->successResponse([
-                'match' => new UserMatchResource($result['match']),
-                'target_user' => new UserResource($result['target_user']),
-                'call_session' => $result['call_session'],
-                'livekit' => $result['livekit'] ?? null,
-            ], $result['message']);
-
+            return $this->successResponse($result, 'Match search broadcast started.');
         } catch (InsufficientTokensException $e) {
             return response()->json([
                 'success' => false,
@@ -57,5 +46,48 @@ class MatchController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 500);
         }
+    }
+
+    public function pending(Request $request): JsonResponse
+    {
+        $requests = $this->matchingService->getPendingMatchRequestsForUser($request->user());
+
+        return $this->successResponse($requests, 'Pending match requests retrieved.');
+    }
+
+    public function accept(Request $request, string $id): JsonResponse
+    {
+        $result = $this->matchingService->acceptMatchRequest($request->user(), $id);
+
+        if (! $result['success']) {
+            return response()->json([
+                'success' => false,
+                'code' => $result['code'] ?? 'MATCH_FAILED',
+                'message' => $result['message'] ?? 'Unable to accept match.',
+            ], 409);
+        }
+
+        return $this->successResponse($result, 'Match accepted successfully.');
+    }
+
+    public function decline(Request $request, string $id): JsonResponse
+    {
+        $result = $this->matchingService->declineMatchRequest($request->user(), $id);
+
+        return $this->successResponse($result, 'Match request declined.');
+    }
+
+    public function cancel(Request $request, string $id): JsonResponse
+    {
+        $result = $this->matchingService->cancelMatchRequest($request->user(), $id);
+
+        return $this->successResponse($result, 'Match request cancelled.');
+    }
+
+    public function status(Request $request, string $id): JsonResponse
+    {
+        $result = $this->matchingService->getMatchRequestStatus($request->user(), $id);
+
+        return $this->successResponse($result, 'Match request status retrieved.');
     }
 }

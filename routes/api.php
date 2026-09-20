@@ -101,6 +101,12 @@ Route::middleware(['auth:sanctum', EnsureAccountActive::class, 'throttle:60,1'])
     Route::post('/likes', [SwipeController::class, 'swipe']);
     Route::get('/matches', [MatchController::class, 'index']);
     Route::post('/matches/search', [MatchController::class, 'search']);
+    Route::post('/match/start', [MatchController::class, 'start']);
+    Route::get('/match/pending', [MatchController::class, 'pending']);
+    Route::post('/match/{id}/accept', [MatchController::class, 'accept']);
+    Route::post('/match/{id}/decline', [MatchController::class, 'decline']);
+    Route::post('/match/{id}/cancel', [MatchController::class, 'cancel']);
+    Route::get('/match/{id}/status', [MatchController::class, 'status']);
 
     // Conversations & Messages
     Route::get('/conversations', [ConversationController::class, 'index']);

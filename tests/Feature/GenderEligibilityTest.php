@@ -151,7 +151,11 @@ class GenderEligibilityTest extends TestCase
         $response = $this->actingAs($man, 'sanctum')->postJson('/api/v1/matches/search');
 
         $response->assertStatus(200)->assertJson(['success' => true]);
-        $this->assertEquals($woman->id, $response->json('data.target_user.id'));
+        $this->assertEquals('broadcasting', $response->json('data.status'));
+
+        $pending = $this->matchingService->getPendingMatchRequestsForUser($woman);
+        $this->assertCount(1, $pending);
+        $this->assertEquals($response->json('data.match_request_id'), $pending[0]['id']);
     }
 
     // 8. MAN cannot Match with MAN
@@ -163,14 +167,10 @@ class GenderEligibilityTest extends TestCase
 
         $response = $this->actingAs($man1, 'sanctum')->postJson('/api/v1/matches/search');
 
-        $response->assertStatus(200)
-            ->assertJson([
-                'success' => false,
-                'code' => 'NO_MATCH_AVAILABLE',
-            ]);
+        $response->assertStatus(200)->assertJson(['success' => true]);
 
-        // Zero tokens deducted
-        $this->assertEquals(100, $man1->fresh()->wallet->coin_balance);
+        $pending = $this->matchingService->getPendingMatchRequestsForUser($man2);
+        $this->assertEmpty($pending);
     }
 
     // 9. WOMAN can Match with eligible MAN
@@ -183,7 +183,10 @@ class GenderEligibilityTest extends TestCase
         $response = $this->actingAs($woman, 'sanctum')->postJson('/api/v1/matches/search');
 
         $response->assertStatus(200)->assertJson(['success' => true]);
-        $this->assertEquals($man->id, $response->json('data.target_user.id'));
+        $this->assertEquals('broadcasting', $response->json('data.status'));
+
+        $pending = $this->matchingService->getPendingMatchRequestsForUser($man);
+        $this->assertCount(1, $pending);
     }
 
     // 10. WOMAN cannot Match with WOMAN
@@ -195,13 +198,10 @@ class GenderEligibilityTest extends TestCase
 
         $response = $this->actingAs($woman1, 'sanctum')->postJson('/api/v1/matches/search');
 
-        $response->assertStatus(200)
-            ->assertJson([
-                'success' => false,
-                'code' => 'NO_MATCH_AVAILABLE',
-            ]);
+        $response->assertStatus(200)->assertJson(['success' => true]);
 
-        $this->assertEquals(100, $woman1->fresh()->wallet->coin_balance);
+        $pending = $this->matchingService->getPendingMatchRequestsForUser($woman2);
+        $this->assertEmpty($pending);
     }
 
     // 11. MAN can call eligible WOMAN
@@ -321,7 +321,7 @@ class GenderEligibilityTest extends TestCase
         $this->assertFalse($ids->contains($man2->id));
     }
 
-    // 18. No-match response occurs when no eligible opposite-gender user is available
+    // 18. Match request creates broadcast when searching for opposite gender
     public function test_no_match_response_when_no_opposite_gender_available(): void
     {
         $man = $this->createMaleUser();
@@ -331,21 +331,22 @@ class GenderEligibilityTest extends TestCase
 
         $response->assertStatus(200)
             ->assertJson([
-                'success' => false,
-                'code' => 'NO_MATCH_AVAILABLE',
+                'success' => true,
             ]);
+        $this->assertEquals('broadcasting', $response->json('data.status'));
     }
 
-    // 19. No tokens are deducted when Match is rejected due to gender eligibility
+    // 19. Insufficient tokens rejects match request
     public function test_no_tokens_deducted_when_match_rejected_for_gender(): void
     {
         $man1 = $this->createMaleUser();
-        $man2 = $this->createMaleUser();
-        $this->walletService->creditCoins($man1, 100);
 
-        $this->actingAs($man1, 'sanctum')->postJson('/api/v1/matches/search');
+        $response = $this->actingAs($man1, 'sanctum')->postJson('/api/v1/matches/search');
 
-        $this->assertEquals(100, $man1->fresh()->wallet->coin_balance);
+        $response->assertStatus(402)
+            ->assertJsonPath('code', 'INSUFFICIENT_TOKENS');
+
+        $this->assertEquals(0, $man1->fresh()->wallet->coin_balance);
     }
 
     // 20. No tokens are deducted when a call is rejected due to gender eligibility

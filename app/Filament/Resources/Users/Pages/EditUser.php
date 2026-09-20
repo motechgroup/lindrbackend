@@ -34,7 +34,7 @@ class EditUser extends EditRecord
                 ->action(function (array $data, AdminVerificationService $verificationService) {
                     $verificationService->verifyUser(auth()->user(), $this->record, $data['reason'] ?? null);
                     Notification::make()->title('User Verified Successfully')->success()->send();
-                    $this->refreshFormData();
+                    $this->fillForm();
                 })
                 ->visible(fn () => auth()->user()?->can('manageCreatorVerification', $this->record) && in_array($this->record->creator_status ?? 'unverified', ['unverified', 'none', 'pending', 'rejected', 'revoked'])),
 
@@ -66,7 +66,7 @@ class EditUser extends EditRecord
                     }
                     $verificationService->rejectVerification(auth()->user(), $this->record, $reason);
                     Notification::make()->title('Verification Rejected')->danger()->send();
-                    $this->refreshFormData();
+                    $this->fillForm();
                 })
                 ->visible(fn () => auth()->user()?->can('manageCreatorVerification', $this->record) && ($this->record->creator_status === 'pending' || in_array($this->record->creator_status, ['unverified', 'none']))),
 
@@ -86,7 +86,7 @@ class EditUser extends EditRecord
                 ->action(function (array $data, AdminVerificationService $verificationService) {
                     $verificationService->resetVerification(auth()->user(), $this->record, $data['reason']);
                     Notification::make()->title('Verification Status Reset')->warning()->send();
-                    $this->refreshFormData();
+                    $this->fillForm();
                 })
                 ->visible(fn () => auth()->user()?->can('manageCreatorVerification', $this->record) && in_array($this->record->creator_status, ['rejected', 'revoked', 'pending'])),
 
@@ -106,7 +106,7 @@ class EditUser extends EditRecord
                 ->action(function (array $data, AdminVerificationService $verificationService) {
                     $verificationService->revokeVerification(auth()->user(), $this->record, $data['reason']);
                     Notification::make()->title('Creator Verification Revoked')->send();
-                    $this->refreshFormData();
+                    $this->fillForm();
                 })
                 ->visible(fn () => auth()->user()?->can('manageCreatorVerification', $this->record) && ($this->record->is_creator || in_array($this->record->creator_status, ['approved', 'verified']))),
 

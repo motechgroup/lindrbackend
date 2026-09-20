@@ -11,6 +11,18 @@ class StartConversationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $recipientId = $this->input('recipient_id')
+            ?? $this->input('receiver_id')
+            ?? $this->input('user_id')
+            ?? $this->input('target_id');
+
+        if ($recipientId !== null) {
+            $this->merge(['recipient_id' => $recipientId]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */

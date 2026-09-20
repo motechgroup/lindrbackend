@@ -31,6 +31,15 @@ class GiftController extends Controller
 
     public function send(Request $request): JsonResponse
     {
+        $recipientId = $request->input('recipient_id')
+            ?? $request->input('receiver_id')
+            ?? $request->input('user_id')
+            ?? $request->input('target_id');
+
+        if ($recipientId !== null) {
+            $request->merge(['recipient_id' => $recipientId]);
+        }
+
         $validated = $request->validate([
             'recipient_id' => ['required', 'integer', 'exists:users,id'],
             'gift_id' => ['required', 'integer', 'exists:gifts,id'],

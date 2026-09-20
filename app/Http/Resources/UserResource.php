@@ -39,7 +39,15 @@ class UserResource extends JsonResource
             'has_payout_hold' => $this->when($isSelf, $this->hasActivePayoutHold()),
             'profile' => new UserProfileResource($this->whenLoaded('profile')),
             'photos' => UserPhotoResource::collection($this->whenLoaded('photos')),
-            'wallet_balance' => $this->when($isSelf, fn () => $this->whenLoaded('wallet', fn () => $this->wallet->coin_balance)),
+            'wallet_balance' => $this->when($isSelf, fn () => (int) ($this->wallet?->coin_balance ?? 0)),
+            'wallet' => $this->when($isSelf, fn () => [
+                'id' => $this->wallet?->id,
+                'user_id' => $this->id,
+                'balance' => (int) ($this->wallet?->coin_balance ?? 0),
+                'coin_balance' => (int) ($this->wallet?->coin_balance ?? 0),
+                'available_balance' => (int) ($this->wallet?->coin_balance ?? 0),
+                'currency' => 'TOKENS',
+            ]),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

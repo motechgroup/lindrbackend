@@ -37,8 +37,9 @@ class GiftService
 
         return DB::transaction(function () use ($sender, $recipient, $gift) {
             // Lock sender wallet & check balance atomically
-            $wallet = Wallet::where('user_id', $sender->id)->lockForUpdate()->first();
-            if (! $wallet || $wallet->coin_balance < $gift->coin_price) {
+            $wallet = $this->walletService->getWallet($sender);
+            $lockedWallet = Wallet::where('id', $wallet->id)->lockForUpdate()->first();
+            if (! $lockedWallet || $lockedWallet->coin_balance < $gift->coin_price) {
                 throw new \InvalidArgumentException('INSUFFICIENT_TOKENS: You do not have enough tokens for this gift.');
             }
 

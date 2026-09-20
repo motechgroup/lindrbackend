@@ -182,8 +182,13 @@ class PaymentRouter
         }
 
         $price = (float) $package->price_kes;
-        if ($method->minimum_amount !== null && $price < (float) $method->minimum_amount) {
-            throw new \InvalidArgumentException("Amount KES {$price} is below the minimum limit for {$method->name}.");
+        if ($price <= 0.0) {
+            throw new \InvalidArgumentException('Transaction amount must be greater than KES 0.00.');
+        }
+
+        $minLimit = $method->minimum_amount !== null ? (float) $method->minimum_amount : 1.0;
+        if ($price < $minLimit) {
+            throw new \InvalidArgumentException("Amount KES {$price} is below the minimum allowed limit of KES {$minLimit} for {$method->name}.");
         }
         if ($method->maximum_amount !== null && $price > (float) $method->maximum_amount) {
             throw new \InvalidArgumentException("Amount KES {$price} exceeds the maximum limit for {$method->name}.");

@@ -109,8 +109,8 @@ class MpesaService
         $consumerKey = $config['consumer_key'];
         $consumerSecret = $config['consumer_secret'];
 
-        // Sandbox / Mock simulation fallback
-        if (empty($consumerKey) || empty($consumerSecret) || str_contains($consumerKey, 'mock') || str_contains($consumerKey, 'sandbox_key')) {
+        // Sandbox / Mock simulation fallback (or automated PHPUnit test environment)
+        if (app()->environment('testing') || empty($consumerKey) || empty($consumerSecret) || str_contains($consumerKey, 'mock') || str_contains($consumerKey, 'sandbox_key')) {
             $mockConversationId = 'AG_B2C_'.now()->format('YmdHis').'_'.rand(1000, 9999);
             $mockOriginatorId = (string) $withdrawal->id;
 

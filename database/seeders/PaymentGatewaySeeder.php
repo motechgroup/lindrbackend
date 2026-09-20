@@ -78,6 +78,14 @@ class PaymentGatewaySeeder extends Seeder
         ];
 
         foreach ($providers as $provData) {
+            $existing = PaymentProvider::where('code', $provData['code'])->first();
+            if ($existing && ! empty($existing->configuration)) {
+                $mergedConfig = array_merge(
+                    $existing->configuration,
+                    array_filter($provData['configuration'], fn ($v) => ! is_null($v) && $v !== '')
+                );
+                $provData['configuration'] = $mergedConfig;
+            }
             PaymentProvider::updateOrCreate(['code' => $provData['code']], $provData);
         }
 
@@ -89,7 +97,7 @@ class PaymentGatewaySeeder extends Seeder
                 'enabled' => true,
                 'supported_countries' => ['KE'],
                 'supported_currencies' => ['KES'],
-                'minimum_amount' => 10.00,
+                'minimum_amount' => 1.00,
                 'maximum_amount' => 250000.00,
                 'display_order' => 1,
             ],
@@ -100,7 +108,7 @@ class PaymentGatewaySeeder extends Seeder
                 'enabled' => true,
                 'supported_countries' => ['KE', 'NG', 'GH'],
                 'supported_currencies' => ['KES', 'NGN', 'GHS', 'USD'],
-                'minimum_amount' => 10.00,
+                'minimum_amount' => 1.00,
                 'maximum_amount' => 500000.00,
                 'display_order' => 2,
             ],
@@ -111,7 +119,7 @@ class PaymentGatewaySeeder extends Seeder
                 'enabled' => true,
                 'supported_countries' => ['KE', 'NG', 'GH', 'US', 'GB'],
                 'supported_currencies' => ['KES', 'NGN', 'GHS', 'USD', 'GBP'],
-                'minimum_amount' => 10.00,
+                'minimum_amount' => 1.00,
                 'maximum_amount' => 1000000.00,
                 'display_order' => 3,
             ],
@@ -122,7 +130,7 @@ class PaymentGatewaySeeder extends Seeder
                 'enabled' => true,
                 'supported_countries' => ['KE', 'NG', 'GH', 'US', 'GB'],
                 'supported_currencies' => ['KES', 'NGN', 'GHS', 'USD', 'GBP'],
-                'minimum_amount' => 10.00,
+                'minimum_amount' => 1.00,
                 'maximum_amount' => 1000000.00,
                 'display_order' => 4,
             ],

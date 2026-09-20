@@ -55,7 +55,8 @@ class GiftService
 
             // Calculate revenue split
             $gender = strtolower($recipient->profile?->gender ?? 'female');
-            $split = $this->monetizationService->calculateSplit($gift->coin_price, 'gift', $gender);
+            $overridePct = $gift->recipient_share_percentage > 0 ? (float) $gift->recipient_share_percentage : null;
+            $split = $this->monetizationService->calculateSplit($gift->coin_price, 'gift', $gender, $recipient, $overridePct);
             $recipientShareCoins = $split['creator_amount'];
             $platformShareCoins = $split['platform_amount'];
 

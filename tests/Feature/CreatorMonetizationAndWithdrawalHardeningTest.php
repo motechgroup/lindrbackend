@@ -497,4 +497,30 @@ class CreatorMonetizationAndWithdrawalHardeningTest extends TestCase
         $this->assertStringNotContainsString('passkey', $json);
         $this->assertStringNotContainsString('initiator_password', $json);
     }
+
+    public function test_22_admin_configured_percentages_are_used_for_awarding_credits(): void
+    {
+        $femaleCreator = $this->createVerifiedCreator('female');
+
+        /** @var MonetizationService $monetization */
+        $monetization = app(MonetizationService::class);
+
+        // Admin changes call share to 80% and chat share to 75%
+        PlatformSetting::set('call_female_creator_share_pct', 80.0);
+        PlatformSetting::set('chat_female_creator_share_pct', 75.0);
+        PlatformSetting::set('gift_female_creator_share_pct', 85.0);
+
+        $callSplit = $monetization->calculateSplit(100, 'call', 'female', $femaleCreator);
+        $chatSplit = $monetization->calculateSplit(100, 'chat', 'female', $femaleCreator);
+        $giftSplit = $monetization->calculateSplit(100, 'gift', 'female', $femaleCreator);
+
+        $this->assertEquals(80, $callSplit['creator_amount']);
+        $this->assertEquals(80.0, $callSplit['creator_share_pct']);
+
+        $this->assertEquals(75, $chatSplit['creator_amount']);
+        $this->assertEquals(75.0, $chatSplit['creator_share_pct']);
+
+        $this->assertEquals(85, $giftSplit['creator_amount']);
+        $this->assertEquals(85.0, $giftSplit['creator_share_pct']);
+    }
 }

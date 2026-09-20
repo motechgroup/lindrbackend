@@ -37,6 +37,7 @@ class AdminVerificationService
             'creator_status' => 'approved',
             'liveness_verified_at' => now(),
         ]);
+        $targetUser->profile?->update(['is_verified' => true]);
 
         // Update any pending liveness verifications for this user
         LivenessVerification::where('user_id', $targetUser->id)
@@ -78,7 +79,9 @@ class AdminVerificationService
         $targetUser->update([
             'is_creator' => false,
             'creator_status' => 'rejected',
+            'liveness_verified_at' => null,
         ]);
+        $targetUser->profile?->update(['is_verified' => false]);
 
         LivenessVerification::where('user_id', $targetUser->id)
             ->where('status', 'pending')
@@ -118,7 +121,9 @@ class AdminVerificationService
         $targetUser->update([
             'is_creator' => false,
             'creator_status' => 'unverified',
+            'liveness_verified_at' => null,
         ]);
+        $targetUser->profile?->update(['is_verified' => false]);
 
         $this->auditService->logAction(
             $admin,
@@ -148,7 +153,9 @@ class AdminVerificationService
         $targetUser->update([
             'is_creator' => false,
             'creator_status' => 'revoked',
+            'liveness_verified_at' => null,
         ]);
+        $targetUser->profile?->update(['is_verified' => false]);
 
         // Historical ledger entries and transaction records remain untouched.
 

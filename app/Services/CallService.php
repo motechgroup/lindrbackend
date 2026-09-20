@@ -169,6 +169,9 @@ class CallService
 
             // Execute 1st minute billable interval upon connection
             $billingResult = $this->billCallInterval($callSession, 1);
+            if (! empty($billingResult['call_ended'])) {
+                throw new InsufficientTokensException('Caller has insufficient token balance.');
+            }
 
             // Generate LiveKit join token for participant
             $livekitData = $this->liveKitService->generateJoinToken($recipient, $callSession->room_name);

@@ -62,7 +62,7 @@ class UserProfileResource extends JsonResource
             'presence_status' => $presenceStatus,
             'is_available_for_call' => $isAvailable,
             'last_heartbeat_at' => $this->last_heartbeat_at?->toIso8601String(),
-            'is_verified' => (bool) $this->is_verified,
+            'is_verified' => (bool) ($this->is_verified && $user && $user->is_creator && in_array($user->creator_status, ['approved', 'verified'])),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

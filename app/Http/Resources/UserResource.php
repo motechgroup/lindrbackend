@@ -34,7 +34,7 @@ class UserResource extends JsonResource
             'creator_status' => $this->creator_status ?? 'none',
             'email_verified' => $this->when($isSelf, $this->email_verified_at !== null),
             'phone_verified' => $this->when($isSelf, $this->phone_verified_at !== null),
-            'liveness_verified' => $this->liveness_verified_at !== null,
+            'liveness_verified' => (bool) $this->is_creator && in_array($this->creator_status, ['approved', 'verified']) && $this->liveness_verified_at !== null,
             'mpesa_phone_verified' => $this->when($isSelf, (bool) $this->mpesa_phone_verified),
             'has_payout_hold' => $this->when($isSelf, $this->hasActivePayoutHold()),
             'profile' => new UserProfileResource($this->whenLoaded('profile')),

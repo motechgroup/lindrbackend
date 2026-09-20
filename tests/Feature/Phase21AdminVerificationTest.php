@@ -5,12 +5,15 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\AdminAction;
+use App\Models\CallSession;
 use App\Models\CreatorCreditLedger;
 use App\Models\User;
 use App\Services\AdminVerificationService;
+use App\Services\CallService;
 use App\Services\CreatorEligibilityService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class Phase21AdminVerificationTest extends TestCase
@@ -265,5 +268,49 @@ class Phase21AdminVerificationTest extends TestCase
         $this->verificationService->verifyUser($this->adminUser, $this->normalUser);
 
         $this->assertEquals($initialLedgerCount, CreatorCreditLedger::count());
+    }
+
+    // 21. Revoked user serialization returns false for liveness and profile is_verified
+    public function test_21_revoked_user_serialization_returns_false_for_liveness_and_is_verified(): void
+    {
+        $this->verificationService->verifyUser($this->adminUser, $this->normalUser);
+
+        $res1 = $this->actingAs($this->normalUser, 'sanctum')->getJson('/api/v1/auth/me');
+        $res1->assertStatus(200)
+            ->assertJsonPath('data.liveness_verified', true);
+
+        $this->verificationService->revokeVerification($this->adminUser, $this->normalUser, 'Test revocation');
+
+        $res2 = $this->actingAs($this->normalUser, 'sanctum')->getJson('/api/v1/auth/me');
+        $res2->assertStatus(200)
+            ->assertJsonPath('data.liveness_verified', false)
+            ->assertJsonPath('data.is_creator', false)
+            ->assertJsonPath('data.creator_status', 'revoked');
+    }
+
+    // 22. Accept call with insufficient tokens returns structured 422 error
+    public function test_22_accept_call_with_insufficient_tokens_returns_structured_422_error(): void
+    {
+        $maleCaller = User::factory()->male()->create(['status' => UserStatus::Active]);
+        $femaleReceiver = User::factory()->female()->create(['status' => UserStatus::Active]);
+
+        // Caller has zero tokens
+        $callService = app(CallService::class);
+        $callSession = CallSession::create([
+            'id' => (string) Str::uuid(),
+            'caller_id' => $maleCaller->id,
+            'receiver_id' => $femaleReceiver->id,
+            'call_type' => 'video',
+            'room_name' => 'lindr_room_test_123',
+            'rate_per_minute' => 20,
+            'status' => CallSession::STATUS_RINGING,
+        ]);
+
+        $response = $this->actingAs($femaleReceiver, 'sanctum')
+            ->postJson("/api/v1/calls/{$callSession->id}/accept");
+
+        $response->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error_code', 'INSUFFICIENT_TOKENS');
     }
 }

@@ -81,8 +81,12 @@ class CallController extends Controller
             return $this->successResponse($result, 'Call accepted successfully.');
         } catch (\DomainException|\InvalidArgumentException $e) {
             return $this->errorResponse($e->getMessage(), 403);
-        } catch (CallUnavailableException $e) {
-            return $this->errorResponse($e->getMessage(), 422);
+        } catch (CallUnavailableException|InsufficientTokensException $e) {
+            return response()->json([
+                'success' => false,
+                'error_code' => $e instanceof InsufficientTokensException ? 'INSUFFICIENT_TOKENS' : 'CALL_UNAVAILABLE',
+                'message' => $e->getMessage(),
+            ], 422);
         }
     }
 

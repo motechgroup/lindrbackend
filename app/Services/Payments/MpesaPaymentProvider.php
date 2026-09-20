@@ -72,8 +72,8 @@ class MpesaPaymentProvider implements PaymentProviderInterface
 
                 if (! $authResponse->successful()) {
                     $errText = $authResponse->json('errorMessage') ?? $authResponse->json('error_description') ?? $authResponse->body();
-                    if (empty(trim((string) $errText))) {
-                        $errText = "Invalid Consumer Key or Secret (HTTP {$authResponse->status()})";
+                    if (empty(trim((string) $errText)) || str_contains(strtolower((string) $errText), 'invalid authentication')) {
+                        $errText = 'Consumer Key/Secret is not registered on Safaricom Daraja. Please register a free app at https://developer.safaricom.co.ke and update your keys.';
                     }
                     Log::error('M-Pesa OAuth Auth failed', ['status' => $authResponse->status(), 'body' => $authResponse->body()]);
 
@@ -81,7 +81,7 @@ class MpesaPaymentProvider implements PaymentProviderInterface
                         success: false,
                         transactionReference: $transaction->public_reference,
                         providerReference: null,
-                        message: "Safaricom M-Pesa Auth Failed: {$errText}"
+                        message: "M-Pesa Auth Failed: {$errText}"
                     );
                 }
 

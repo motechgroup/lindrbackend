@@ -71,8 +71,10 @@ class WithdrawalController extends Controller
         $user = $request->user();
 
         return $this->successResponse([
+            'payout_method' => $user->payout_method ?? 'mpesa',
             'mpesa_phone' => $user->mpesa_phone,
             'is_verified' => (bool) $user->mpesa_phone_verified,
+            'paypal_email' => $user->paypal_email,
             'payout_hold' => (bool) ($user->payout_hold_until && now()->lessThan($user->payout_hold_until)),
         ], 'Withdrawal methods retrieved.');
     }
@@ -80,18 +82,33 @@ class WithdrawalController extends Controller
     public function updateMethod(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'mpesa_phone' => ['required', 'string', 'max:20'],
+            'payout_method' => ['nullable', 'string', 'in:mpesa,paypal'],
+            'mpesa_phone' => ['nullable', 'string', 'max:20'],
+            'paypal_email' => ['nullable', 'email', 'max:100'],
         ]);
 
         $user = $request->user();
-        $user->update([
-            'mpesa_phone' => $validated['mpesa_phone'],
-            'mpesa_phone_verified' => true,
-        ]);
+        $updates = [];
+
+        if (isset($validated['payout_method'])) {
+            $updates['payout_method'] = $validated['payout_method'];
+        }
+        if (isset($validated['mpesa_phone'])) {
+            $updates['mpesa_phone'] = $validated['mpesa_phone'];
+        }
+        if (isset($validated['paypal_email'])) {
+            $updates['paypal_email'] = $validated['paypal_email'];
+        }
+
+        if (! empty($updates)) {
+            $user->update($updates);
+        }
 
         return $this->successResponse([
+            'payout_method' => $user->payout_method ?? 'mpesa',
             'mpesa_phone' => $user->mpesa_phone,
-            'is_verified' => true,
+            'is_verified' => (bool) $user->mpesa_phone_verified,
+            'paypal_email' => $user->paypal_email,
         ], 'Withdrawal method updated successfully.');
     }
 }

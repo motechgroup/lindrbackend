@@ -52,6 +52,8 @@ class User extends Authenticatable implements FilamentUser
         'mpesa_phone',
         'mpesa_phone_verified',
         'mpesa_verified_at',
+        'paypal_email',
+        'payout_method',
         'payout_hold_until',
         'email_verified_at',
         'phone_verified_at',

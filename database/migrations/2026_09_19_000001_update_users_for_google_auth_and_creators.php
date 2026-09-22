@@ -39,6 +39,12 @@ return new class extends Migration
             if (! Schema::hasColumn('users', 'payout_hold_until')) {
                 $table->timestamp('payout_hold_until')->nullable();
             }
+            if (! Schema::hasColumn('users', 'paypal_email')) {
+                $table->string('paypal_email')->nullable();
+            }
+            if (! Schema::hasColumn('users', 'payout_method')) {
+                $table->string('payout_method')->default('mpesa');
+            }
         });
 
         if (Schema::hasTable('wallets')) {

@@ -69,8 +69,8 @@ Route::prefix('auth')->group(function () {
 
 use App\Http\Controllers\Api\V1\InterestController;
 
-// Protected API Routes with Throttle Middleware
-Route::middleware(['auth:sanctum', EnsureAccountActive::class, 'throttle:60,1'])->group(function () {
+// Protected API Routes
+Route::middleware(['auth:sanctum', EnsureAccountActive::class])->group(function () {
     // Interests Catalog
     Route::get('/interests', [InterestController::class, 'index']);
 
@@ -130,7 +130,7 @@ Route::middleware(['auth:sanctum', EnsureAccountActive::class, 'throttle:60,1'])
     Route::post('/wallet/topup', [WalletController::class, 'topup']);
     Route::post('/withdrawals/request', [WithdrawalController::class, 'requestPayout']);
 
-    Route::post('/gifts/send', [GiftController::class, 'send'])->middleware('throttle:gifts');
+    Route::post('/gifts/send', [GiftController::class, 'send']);
 
     // Call Endpoints
     Route::post('/calls/request', [CallController::class, 'requestCall']);
